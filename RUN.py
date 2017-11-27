@@ -126,7 +126,7 @@ class MARTA_Client:
         try:
             #TODO: figure out the name of the database
             db = pymysql.connect(host='academic-mysql.cc.gatech.edu',
-                                 db='cs4400_Team_54', user='cs4400_Group_54', passwd='qUYP7usT')
+                                 db='cs4400_Group_54', user='cs4400_Group_54', passwd='qUYP7usT')
             return db
         except:
             messagebox.showwarning('Error!', 'Cannot connect. Internet Connection Issue or DB not ready.')
