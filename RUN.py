@@ -2,7 +2,7 @@ from tkinter import *
 from PIL import ImageTk, Image
 import pymysql
 from tkinter import messagebox
-from tkinter import ttk
+from tkinter import ttk, Canvas
 from datetime import datetime, timedelta
 import decimal
 
@@ -100,7 +100,7 @@ class MARTA_Client:
                                    "Sorry, the username and password you entered"
                                    + " do not match.")
             return False
-
+        # to be modified
         isManagerName = self.cursor.execute("SELECT * FROM Manager WHERE Username = %s", (self.username))
         if isManagerName:
             self.loginWindow.withdraw()
@@ -119,6 +119,76 @@ class MARTA_Client:
         self.createNewUserRegistrationWindow()
         self.buildNewUserRegistrationWindow(self.newUserRegistrationWindow)
         self.loginWindow.withdraw()
+
+#======New User Registration Window==============
+
+    def createNewUserRegistrationWindow(self):
+        # Create blank newUserRegistrationWindow
+        self.newUserRegistrationWindow = Tk()
+        self.newUserRegistrationWindow.withdraw()
+        self.newUserRegistrationWindow.update_idletasks()  # Update "requested size" from geometry manager
+        x = (self.newUserRegistrationWindow.winfo_screenwidth() - self.newUserRegistrationWindow.winfo_reqwidth()) / 2
+        y = (self.newUserRegistrationWindow.winfo_screenheight() - self.newUserRegistrationWindow.winfo_reqheight()) / 2
+        self.newUserRegistrationWindow.geometry("+%d+%d" % (x, y))
+        self.newUserRegistrationWindow.deiconify()
+        self.newUserRegistrationWindow.title("Create a MARTA Account")
+
+    def buildNewUserRegistrationWindow(self,newUserRegistrationWindow):
+        # Add components for newUserRegistrationWindow
+
+        # Username Label
+        usernameLabel = Label(newUserRegistrationWindow, text="Username")
+        usernameLabel.grid(row=2, column=2, sticky=W)
+
+        # Email Address Label
+        emailAddressLabel = Label(newUserRegistrationWindow, text="Email Address")
+        emailAddressLabel.grid(row=3, column=2, sticky=W)
+
+
+        # Password Label
+        passwordLabel = Label(newUserRegistrationWindow, text="Password")
+        passwordLabel.grid(row=4, column=2, sticky=W)
+
+        # Confirm Password Label
+        confirmPasswordLabel = Label(newUserRegistrationWindow, text="Confirm Password")
+        confirmPasswordLabel.grid(row=5, column=2, sticky=W)
+
+        # Username Entry
+        self.registrationUsername = StringVar()
+        usernameEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationUsername, width=25)
+        usernameEntry.grid(row=2, column=3, padx=1)
+
+
+        # Email Address Entry
+        self.registrationEmailAddress = StringVar()
+        emailAddressEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationEmailAddress,width=25)
+        emailAddressEntry.grid(row=3, column=3, padx=1)
+
+        # Password Entry
+        self.registrationPassword = StringVar()
+        passwordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationPassword,show = '*',width=25)
+        passwordEntry.grid(row=4, column=3, padx=1)
+
+        # Confirm Password Entry
+        self.registrationConfirmPassword = StringVar()
+        confirmPasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationConfirmPassword,show = '*',width=25)
+        confirmPasswordEntry.grid(row=5, column=3, padx=1)
+
+
+        var = IntVar()
+        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=var, value=1)
+        r1.grid(row=6, column=1, sticky=W)
+        breezebox = Label(newUserRegistrationWindow, text="Card Number")
+        breezebox.grid(row=7, column=1, sticky=E)
+        self.registrationCardNum = StringVar()
+        breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
+        breezeboxEntry.grid(row=7, column=2, padx=1)
+        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=var, value=2)
+        r2.grid(row=8, column=1, sticky=W)
+
+        # Create Button
+        button1 = Button(newUserRegistrationWindow, text="Register", command=self.newUserRegistrationWindow)
+        button1.grid(row=8, column=4, sticky=E)
 
 
     # --------------------Database Connection-----------------
