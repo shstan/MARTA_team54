@@ -97,7 +97,7 @@ class MARTA_Client:
                                    "The username you entered is not an user\'s username.")
             return False
         usernameAndPasswordMatch = self.cursor.execute(
-            "SELECT * FROM User WHERE (Username = %s AND Password = %s)", (self.username, self.password))
+            "SELECT * FROM User WHERE (Username = %s AND Password = %s)", (self.username, self.computeMD5hash(self.password)))
         if not usernameAndPasswordMatch:
             messagebox.showwarning("Username and password don\'t match",
                                    "Sorry, the username and password you entered"
