@@ -5,6 +5,7 @@ from tkinter import messagebox
 from tkinter import ttk, Canvas
 from datetime import datetime, timedelta
 import decimal
+import random
 
 #MARTA v1.3
 #By Team 54, CS4400 2017 Fall
@@ -124,13 +125,17 @@ class MARTA_Client:
 
     def createNewUserRegistrationWindow(self):
         # Create blank newUserRegistrationWindow
-        self.newUserRegistrationWindow = Tk()
-        self.newUserRegistrationWindow.withdraw()
-        self.newUserRegistrationWindow.update_idletasks()  # Update "requested size" from geometry manager
-        x = (self.newUserRegistrationWindow.winfo_screenwidth() - self.newUserRegistrationWindow.winfo_reqwidth()) / 2
-        y = (self.newUserRegistrationWindow.winfo_screenheight() - self.newUserRegistrationWindow.winfo_reqheight()) / 2
-        self.newUserRegistrationWindow.geometry("+%d+%d" % (x, y))
-        self.newUserRegistrationWindow.deiconify()
+        # self.newUserRegistrationWindow = Tk()
+        # self.newUserRegistrationWindow.withdraw()
+        # self.newUserRegistrationWindow.update_idletasks()  # Update "requested size" from geometry manager
+        # x = (self.newUserRegistrationWindow.winfo_screenwidth() - self.newUserRegistrationWindow.winfo_reqwidth()) / 2
+        # y = (self.newUserRegistrationWindow.winfo_screenheight() - self.newUserRegistrationWindow.winfo_reqheight()) / 2
+        # self.newUserRegistrationWindow.geometry("+%d+%d" % (x, y))
+        # self.newUserRegistrationWindow.deiconify()
+
+        # Create blank newUserRegistrationWindow
+        self.newUserRegistrationWindow = Toplevel()
+
         self.newUserRegistrationWindow.title("Create a MARTA Account")
 
     def buildNewUserRegistrationWindow(self,newUserRegistrationWindow):
@@ -175,20 +180,101 @@ class MARTA_Client:
         confirmPasswordEntry.grid(row=5, column=3, padx=1)
 
 
-        var = IntVar()
-        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=var, value=1)
+        self.var = IntVar()
+
+        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=self.var, value=0, command=self.radioButtonChanging(0))
         r1.grid(row=6, column=1, sticky=W)
         breezebox = Label(newUserRegistrationWindow, text="Card Number")
         breezebox.grid(row=7, column=1, sticky=E)
         self.registrationCardNum = StringVar()
-        breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
-        breezeboxEntry.grid(row=7, column=2, padx=1)
-        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=var, value=2)
+        # breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
+        # breezeboxEntry.grid(row=7, column=2, padx=1)
+        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value=1, command=self.radioButtonChanging(1))
         r2.grid(row=8, column=1, sticky=W)
 
+        if self.var.get() == 1:
+            print (self.var.get())
+            breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20, state = 'disabled')
+            # breezeboxEntry.grid(row=7, column=2, padx=1)
+        elif self.var.get() == 0:
+            print (self.var.get())
+            breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum)
+
+        breezeboxEntry.grid(row=7, column=2, padx=1)
+
         # Create Button
-        button1 = Button(newUserRegistrationWindow, text="Register", command=self.newUserRegistrationWindow)
+        button1 = Button(newUserRegistrationWindow, text="Register", command=self.newUserRegistrationWindowCreateButtonClicked)
         button1.grid(row=8, column=4, sticky=E)
+
+
+    def radioButtonChanging(self, value):
+        self.var.set(value)
+        return False
+
+    def newUserRegistrationWindowCreateButtonClicked(self):
+        # Click the Create Button on New User Registration Window:
+        # Invoke createChooseFunctionalityWindow; Invoke buildChooseFunctionalityWindow;
+        # Destroy New User Registration Window
+        self.username = self.registrationUsername.get()
+        self.emailAddress = self.registrationEmailAddress.get()
+        self.password = self.registrationPassword.get()
+        self.confirmPassword = self.registrationConfirmPassword.get()
+        self.newBreezeCardNum = self.registrationCardNum.get()
+        self.isNewcard = self.var.get()
+        if not self.username:
+            messagebox.showwarning("Username input is empty", "Please enter username.")
+            return False
+        if not self.emailAddress:
+            messagebox.showwarning("E-mail input is empty", "Please enter E-mail.")
+            return False
+        if not self.password:
+            messagebox.showwarning("Password input is empty", "Please enter password")
+            return False
+        if not self.confirmPassword:
+            messagebox.showwarning("Confirm password input is empty", "Please enter confirm password")
+            return False
+        if self.isNewcard == 0:
+            if not newBreezeCardNum:
+                messagebox.showwarning("Confirm Breezecard input is empty", "Please enter breezecard number")
+            return False
+
+        isUsername = self.cursor.execute("SELECT * FROM User WHERE Username = %s", self.username)
+        if isUsername:
+           messagebox.showwarning("This username has been used.",
+                                  "Please input another username.")
+           return False
+        isEmail = self.cursor.execute("SELECT * FROM Passenger WHERE Email = %s", self.emailAddress)
+        if isEmail:
+           messagebox.showwarning("This E-mail address has been used.",
+                                  "Please input another E-mail address.")
+           return False
+
+        if not (self.password == self.confirmPassword):
+           messagebox.showwarning("Password does not match the confirm password.",
+                                  "Please reconfirm the password.")
+           return False
+
+        if self.isNewcard:
+            while True:
+                nums = [x for x in range(16)]
+                random.shuffle(nums)
+                nums = str(nums)
+                self.newBreezeCardNum = nums;
+                isBreezeNum = self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s", self.newBreezeCardNum)
+                print (newBreezeCardNum)
+                if not isBreezeNum:
+                    break
+
+
+        messagebox.showinfo("info","Register successfully!")
+        self.cursor.execute("INSERT INTO Passenger VALUES (%s, %s)", (self.username, self.emailAddress))
+        self.cursor.execute("INSERT INTO User VALUES (%s, %s, 0)", (self.username, self.password))
+
+        self.cursor.execute("INSERT INTO Breezecard VALUES (%s, 0, %s)", (self.newBreezeCardNum, self.username))
+
+        self.createChooseFunctionalityWindow()
+        self.buildChooseFunctionalityWindow(self.chooseFunctionalityWindow)
+        self.newUserRegistrationWindow.destroy()
 
 
     # --------------------Database Connection-----------------
