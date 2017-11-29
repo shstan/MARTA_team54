@@ -20,6 +20,7 @@ class MARTA_Client:
         self.createLoginWindow()
         self.buildLoginWindow(self.loginWindow)
         self.loginWindow.mainloop()
+        self.newUserRegistrationWindow.mainloop()
         sys.exit()
 
     #=================================LOGIN WINDOW========================================
@@ -102,13 +103,13 @@ class MARTA_Client:
             messagebox.showwarning("Password input is empty", "Please enter password")
             return False
         #Error message for username input doesn't exist in db
-        isUsername = self.cursor.execute("SELECT * FROM User WHERE Username = %s", self.username)
+        isUsername = self.cursor.execute("SELECT * FROM User WHERE username = %s", self.username)
         if not isUsername:
             messagebox.showwarning("Username doesn't exist", "The username you entered does not exist.")
             return False
         #Error message for username and password doesn't match with db
         usernameAndPasswordMatch = self.cursor.execute(
-            "SELECT * FROM User WHERE (Username = %s AND Password = %s)", (self.username, self.password))
+            "SELECT * FROM User WHERE (username = %s AND password = %s)", (self.username, self.password))
         if not usernameAndPasswordMatch:
             messagebox.showwarning("Username and password don\'t match",
                                    "Sorry, the username and password you entered"
@@ -131,20 +132,16 @@ class MARTA_Client:
         # Click button on Login Window:
         # Invoke createNewUserRegistrationWindow; Invoke buildNewUserRegistrationWindow;
         # Hide Login Window; Set newUserRegistrationWindow on the top
+
         self.createNewUserRegistrationWindow()
         self.buildNewUserRegistrationWindow(self.newUserRegistrationWindow)
+        #self.loginWindow.withdraw()
 
     #=============New User Registration Window==============
 
     def createNewUserRegistrationWindow(self):
         # Create blank newUserRegistrationWindow
-        self.newUserRegistrationWindow = Tk()
-        self.newUserRegistrationWindow.withdraw()
-        self.newUserRegistrationWindow.update_idletasks()  # Update "requested size" from geometry manager
-        x = (self.newUserRegistrationWindow.winfo_screenwidth() - self.newUserRegistrationWindow.winfo_reqwidth()) / 2
-        y = (self.newUserRegistrationWindow.winfo_screenheight() - self.newUserRegistrationWindow.winfo_reqheight()) / 2
-        self.newUserRegistrationWindow.geometry("+%d+%d" % (x, y))
-        self.newUserRegistrationWindow.deiconify()
+        self.newUserRegistrationWindow = Toplevel()
         self.newUserRegistrationWindow.title("Create a MARTA Account")
 
     def buildNewUserRegistrationWindow(self,newUserRegistrationWindow):
@@ -169,24 +166,24 @@ class MARTA_Client:
 
         # Username Entry
         self.registrationUsername = StringVar()
-        usernameEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationUsername, width=25)
-        usernameEntry.grid(row=2, column=3, padx=1)
+        regusernameEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationUsername, width=25)
+        regusernameEntry.grid(row=2, column=3, padx=1)
 
 
         # Email Address Entry
         self.registrationEmailAddress = StringVar()
-        emailAddressEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationEmailAddress,width=25)
-        emailAddressEntry.grid(row=3, column=3, padx=1)
+        regemailAddressEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationEmailAddress,width=25)
+        regemailAddressEntry.grid(row=3, column=3, padx=1)
 
         # Password Entry
         self.registrationPassword = StringVar()
-        passwordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationPassword,show = '*',width=25)
-        passwordEntry.grid(row=4, column=3, padx=1)
+        regpasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationPassword,show = '*',width=25)
+        regpasswordEntry.grid(row=4, column=3, padx=1)
 
         # Confirm Password Entry
         self.registrationConfirmPassword = StringVar()
-        confirmPasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationConfirmPassword,show = '*',width=25)
-        confirmPasswordEntry.grid(row=5, column=3, padx=1)
+        regconfirmPasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationConfirmPassword,show = '*',width=25)
+        regconfirmPasswordEntry.grid(row=5, column=3, padx=1)
 
 
         var = IntVar()
@@ -201,35 +198,46 @@ class MARTA_Client:
         r2.grid(row=8, column=1, sticky=W)
 
         # Create Button
-        registerButton = Button(newUserRegistrationWindow, text="Register", command=self.registrationWindowButtonClicked)
-        registerButton.grid(row=8, column=4, sticky=E)
+        newRegisterButton = Button(newUserRegistrationWindow, text="Register", command=self.newRegistrationWindowButtonClicked)
+        newRegisterButton.grid(row=8, column=4, sticky=E)
 
-    def registrationWindowButtonClicked(self):
+    def newRegistrationWindowButtonClicked(self):
         #Clock the button on Register Window
         #Obtain username, Email Address, Password, confirm password from keypress
-        self.username = self.registrationUsername.get()
-        self.email = self.registrationEmailAddress.get()
-        self.password = self.registrationPassword.get()
-        self.confirmpassword = self.registrationConfirmPassword.get()
+        self.regusername = self.registrationUsername.get()
+        self.regemail = self.registrationEmailAddress.get()
+        self.regpassword = self.registrationPassword.get()
+        self.regconfirmpassword = self.registrationConfirmPassword.get()
 
         #TODO: password hashing before input in the db
         # Error message for username input empty
-        if not self.username:
-            messagebox.showwarning("Username input is empty", "Please enter username.")
+        if not self.regusername:
+            messagebox.showwarning("Username input is empty", "Please enter registering username.")
             return False
         #Error message for email input empty
-        if not self.email:
-            messagebox.showwarning("Email input is empty", "Please enter email.")
+        if not self.regemail:
+            messagebox.showwarning("Email input is empty", "Please enter registering email.")
             return False
         #Error message for password input empty
-        if not self.password:
+        if not self.regpassword:
             messagebox.showwarning("Password input is empty", "Please enter password.")
             return False
 
         #Error message for email not valid
         #Error message for username input already exist in db
+        isUsername = self.cursor.execute("SELECT * FROM User WHERE username = %s", self.regusername)
+        if isUsername:
+            messagebox.showwarning("Username already exist", "The username you entered already exist. \n Try different username.")
+            return False
+
         #Error message for email input already exist in db
+        isEmail = self.cursor.execute("SELECT * FROM Passenger WHERE email = %s", self.regemail)
+        if isEmail:
+            messagebox.showwarning("Email already exist", "The email you entered already exist. \n Try different email.")
+
         #Error message for password not matching confirmpassword
+        if (self.regpassword != self.regconfirmpassword):
+            messagebox.showwarning("Password confirmation Error", "Password and Confirm password doesn't match.")
         
         #For clicking "Use my existing Breezecard"
         #Error message for Breezecard input empty
@@ -242,15 +250,8 @@ class MARTA_Client:
 
     #=====================Passenger Functionality Window=======================
     def createPassengerFunctionalityWindow(self):
-        self.passengerFunctionalityWindow = Tk()
+        self.passengerFunctionalityWindow = Toplevel()
         self.passengerFunctionalityWindow.title("Welcome to Marta")
-
-        self.passengerFunctionalityWindow.withdraw()
-        self.passengerFunctionalityWindow.update_idletasks()
-        x = (self.passengerFunctionalityWindow.winfo_screenwidth() - self.passengerFunctionalityWindow.winfo_reqwidth()) / 2
-        y = (self.passengerFunctionalityWindow.winfo_screenheight() - self.passengerFunctionalityWindow.winfo_reqheight()) / 2
-        self.passengerFunctionalityWindow.geometry("+%d+%d" % (x, y))
-        self.passengerFunctionalityWindow.deiconify()
 
     def buildPassengerFunctionalityWindow(self, passengerFunctionalityWindow):
         #Add components for passengerFunctionalityWindow
@@ -261,15 +262,8 @@ class MARTA_Client:
 
     #=============Administrator Functionality Window========================
     def createAdminFunctionalityWindow(self):
-        self.adminFunctionalityWindow = Tk()
+        self.adminFunctionalityWindow = Toplevel()
         self.adminFunctionalityWindow.title("Administrator")
-
-        self.adminFunctionalityWindow.withdraw()
-        self.adminFunctionalityWindow.update_idletasks()
-        x = (self.adminFunctionalityWindow.winfo_screenwidth() - self.adminFunctionalityWindow.winfo_reqwidth()) / 2
-        y = (self.adminFunctionalityWindow.winfo_screenheight() - self.adminFunctionalityWindow.winfo_reqheight()) / 2
-        self.adminFunctionalityWindow.geometry("+%d+%d" % (x, y))
-        self.adminFunctionalityWindow.deiconify()
 
     def buildAdminFunctionalityWindow(self, adminFunctionalityWindow):
         #Add component for adminFunctionalityWindow
