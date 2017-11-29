@@ -202,7 +202,7 @@ class MARTA_Client:
 
         # Create Button
         registerButton = Button(newUserRegistrationWindow, text="Register", command=self.registrationWindowButtonClicked)
-        regissterButton.grid(row=8, column=4, sticky=E)
+        registerButton.grid(row=8, column=4, sticky=E)
 
     def registrationWindowButtonClicked(self):
         #Clock the button on Register Window
