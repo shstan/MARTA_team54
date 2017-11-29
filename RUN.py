@@ -6,6 +6,9 @@ from tkinter import ttk, Canvas
 from datetime import datetime, timedelta
 import decimal
 
+import hashlib
+from hashlib import md5
+
 #MARTA v1.3
 #By Team 54, CS4400 2017 Fall
 class MARTA_Client:
@@ -50,9 +53,9 @@ class MARTA_Client:
         # # Image
         image = Image.open("MARTA-logo.jpg")
         image = image.resize((60, 60), Image.ANTIALIAS)
-        buzzImage = ImageTk.PhotoImage(image)
-        imageLabel = Label(loginWindow, image=buzzImage)
-        imageLabel.image = buzzImage
+        marta_logo = ImageTk.PhotoImage(image)
+        imageLabel = Label(loginWindow, image=marta_logo)
+        imageLabel.image = marta_logo
         imageLabel.grid(row=2, column=4, rowspan=3, sticky=E)
 
         # Username Entry
@@ -118,7 +121,7 @@ class MARTA_Client:
         # Hide Login Window; Set newUserRegistrationWindow on the top
         self.createNewUserRegistrationWindow()
         self.buildNewUserRegistrationWindow(self.newUserRegistrationWindow)
-        self.loginWindow.withdraw()
+        # self.loginWindow.withdraw()
 
 #======New User Registration Window==============
 
@@ -191,10 +194,17 @@ class MARTA_Client:
         button1.grid(row=8, column=4, sticky=E)
 
 
+    #---------------------Utility Fuction---------------------
+    def computeMD5hash(str):
+        m = hashlib.md5()
+        m.update((str))
+        c = m.digest()
+        return c
+
     # --------------------Database Connection-----------------
     def connect(self):
         try:
-            #TODO: figure out the name of the database
+            #COMPLETED_TODO: figure out the name of the database
             db = pymysql.connect(host='academic-mysql.cc.gatech.edu',
                                  db='cs4400_Group_54', user='cs4400_Group_54', passwd='qUYP7usT')
             return db
