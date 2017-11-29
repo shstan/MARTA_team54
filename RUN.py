@@ -96,6 +96,7 @@ class MARTA_Client:
             messagebox.showwarning("Username is not an user\'s username",
                                    "The username you entered is not an user\'s username.")
             return False
+        print(self.password, self.computeMD5hash(self.password))
         usernameAndPasswordMatch = self.cursor.execute(
             "SELECT * FROM User WHERE (Username = %s AND Password = %s)", (self.username, self.computeMD5hash(self.password)))
         if not usernameAndPasswordMatch:
@@ -103,6 +104,8 @@ class MARTA_Client:
                                    "Sorry, the username and password you entered"
                                    + " do not match.")
             return False
+        else:
+            print("Yep, we found:", self.username)
         # to be modified
         isManagerName = self.cursor.execute("SELECT * FROM Manager WHERE Username = %s", (self.username))
         if isManagerName:
@@ -195,10 +198,10 @@ class MARTA_Client:
 
 
     #---------------------Utility Fuction---------------------
-    def computeMD5hash(str):
+    def computeMD5hash(self, str):
         m = hashlib.md5()
-        m.update((str))
-        c = m.digest()
+        m.update((str.encode('utf-8')))
+        c = m.hexdigest()
         return c
 
     # --------------------Database Connection-----------------
