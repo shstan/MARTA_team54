@@ -133,7 +133,6 @@ class MARTA_Client:
         # Hide Login Window; Set newUserRegistrationWindow on the top
         self.createNewUserRegistrationWindow()
         self.buildNewUserRegistrationWindow(self.newUserRegistrationWindow)
-        #self.loginWindow.withdraw()
 
     #=============New User Registration Window==============
 
@@ -202,9 +201,44 @@ class MARTA_Client:
         r2.grid(row=8, column=1, sticky=W)
 
         # Create Button
-        button1 = Button(newUserRegistrationWindow, text="Register", command=self.newUserRegistrationWindow)
-        button1.grid(row=8, column=4, sticky=E)
+        registerButton = Button(newUserRegistrationWindow, text="Register", command=self.registrationWindowButtonClicked)
+        regissterButton.grid(row=8, column=4, sticky=E)
 
+    def registrationWindowButtonClicked(self):
+        #Clock the button on Register Window
+        #Obtain username, Email Address, Password, confirm password from keypress
+        self.username = self.registrationUsername.get()
+        self.email = self.registrationEmailAddress.get()
+        self.password = self.registrationPassword.get()
+        self.confirmpassword = self.registrationConfirmPassword.get()
+
+        #TODO: password hashing before input in the db
+        # Error message for username input empty
+        if not self.username:
+            messagebox.showwarning("Username input is empty", "Please enter username.")
+            return False
+        #Error message for email input empty
+        if not self.email:
+            messagebox.showwarning("Email input is empty", "Please enter email.")
+            return False
+        #Error message for password input empty
+        if not self.password:
+            messagebox.showwarning("Password input is empty", "Please enter password.")
+            return False
+
+        #Error message for email not valid
+        #Error message for username input already exist in db
+        #Error message for email input already exist in db
+        #Error message for password not matching confirmpassword
+        
+        #For clicking "Use my existing Breezecard"
+        #Error message for Breezecard input empty
+        #Error message for Breezecard input invalid (less than 16-digit)
+        #Error message for Breezecard input not exist in db
+        #1) If Breezecard input doesn't have user -> put it in Breezecard table (update)
+        #2) If Breezecard input already have user -> delete from Breezecard table and put in Conflict table (suspend)
+
+        #For clicking "Create a New Breezecard" - make random 16-digit that doesn't exist in db
 
     #=====================Passenger Functionality Window=======================
     def createPassengerFunctionalityWindow(self):
