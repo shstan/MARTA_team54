@@ -224,6 +224,9 @@ class MARTA_Client:
             return False
 
         #Error message for email not valid
+        if not (re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', self.emailAddress)):
+            messagebox.showwarning("Not a valid email", "Please enter valid E-mail address.")
+            return False
         #Error message for username input already exist in db
         isUsername = self.cursor.execute("SELECT * FROM User WHERE username = %s", self.regusername)
         if isUsername:
