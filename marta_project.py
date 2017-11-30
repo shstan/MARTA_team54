@@ -282,19 +282,22 @@ class MARTA_Client:
                     self.hashpassword = self.computeMD5hash(self.regpassword)
                     self.cursor.execute("INSERT INTO User(username, password, IsAdmin) VALUES(%s, %s, FALSE)", (self.regusername, self.hashpassword))
                     self.cursor.execute("INSERT INTO Passenger(pUsername, email) VALUES(%s, %s)", (self.regusername, self.regemail))
-                    self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)", (self.existBreeze, self.regusername))
+                    self.cursor.execute("UPDATE Breezecard SET cUsername = %s", self.regusername)
                     self.db.commit()
                     messagebox.showwarning("Registration Success", "You have successfully registered to MARTA system! Please log in.")
                     self.newUserRegistrationWindow.destroy()
                     return True
-                #2) If Breezecard input already have user -> delete from Breezecard table and put in Conflict table (suspend)
+                #2) If Breezecard input already have user -> put Breezecard in conflict table and assign passenger with random card
                 else:
+                    randomBreeze = str(randint(0,9)) + str(randint(100000000000000,999999999999999))
                     currentTime = datetime.now()
                     currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S")
                     self.hashpassword = self.computeMD5hash(self.regpassword)
                     self.cursor.execute("INSERT INTO User(username, password, IsAdmin) VALUES(%s, %s, FALSE)", (self.regusername, self.hashpassword))
                     self.cursor.execute("INSERT INTO Passenger(pUsername, email) VALUES(%s, %s)", (self.regusername, self.regemail))
+                    self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)", (randomBreeze, self.regusername))
                     self.cursor.execute("INSERT INTO Conflict(conUsername, conCardNum, dateTime) VALUES(%s, %s, %s)", (self.regusername, self.existBreeze, currentTime))
+
                     self.db.commit()
                     messagebox.showwarning("Registration Success", "Your account has been made but the card already has existing user. \n Please contact one of our representatives.")
                     self.newUserRegistrationWindow.destroy()
@@ -326,11 +329,130 @@ class MARTA_Client:
         self.passengerFunctionalityWindow.protocol("WM_DELETE_WINDOW", on_closing)
 
     def buildPassengerFunctionalityWindow(self, passengerFunctionalityWindow):
-        #Add components for passengerFunctionalityWindow
+        self.passusername = self.loginUsername.get()
+        self.cursor.execute("SELECT cardNum FROM Breezecard WHERE cUsername = %s", self.passusername)
+        myCards = self.cursor.fetchall()
+        listmyCards = []
+        for card in myCards:
+            listmyCards.append(card[0])
+        print(listmyCards)
 
-        #temporary label
-        passengerLabel = Label(passengerFunctionalityWindow, text = "passenger")
-        passengerLabel.grid(row=2, column=2, sticky=W)
+        #Welcome user label
+        welcomeLabel = Label(passengerFunctionalityWindow, text= ("Welcome, " + self.passusername))
+        welcomeLabel.grid(row=1, column=5, sticky=E)
+
+        #Breezecard Label
+        breezecardLabel = Label(passengerFunctionalityWindow, text="Breezecard: ")
+        breezecardLabel.grid(row=2, column=1, sticky=W)
+
+        #Balance Label
+        balanceLabel = Label(passengerFunctionalityWindow, text="Balance: ")
+        balanceLabel.grid(row=3, column=1, sticky=W)
+
+        #Balance Showing Label
+        self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", listmyCards[0])
+        balance = self.cursor.fetchone()[0]
+
+        self.balanceVar = StringVar()
+        self.balanceVar.set("$ " + str(balance))
+
+        self.balanceShowLabel = Label(passengerFunctionalityWindow, textvariable=self.balanceVar)
+        self.balanceShowLabel.grid(row=3, column=2, sticky=W)
+
+        #Breezecard Dropdown Menu
+        self.breezecardDropVar = StringVar(passengerFunctionalityWindow)
+        self.breezecardDropVar.set(listmyCards[0])
+
+        self.breezecardDropDown = OptionMenu(passengerFunctionalityWindow, self.breezecardDropVar, *listmyCards, command = self.displayBalance)
+        self.breezecardDropDown.grid(row=2, column=2, sticky=W)
+
+        #Starts At Label
+        startsAtLabel = Label(passengerFunctionalityWindow, text="Starts at: ")
+        startsAtLabel.grid(row=4, column=1, sticky=W)
+
+        #Starts At Dropdown Menu
+        self.cursor.execute("SELECT * FROM Station")
+        stations = self.cursor.fetchall()
+        liststations = []
+        #index: 0-stopID, 1-name, 2-IsTrain, 3-fare, 4-closedStatus
+        for station in stations:
+            station_name = station[1]
+            if (station[2] == 0):
+                station_name = station_name + "(Bus station)"
+            station_name = station_name + " - $" + "{0:.2f}".format(station[3])
+            liststations.append(station_name)
+
+        self.startsAtDropVar = StringVar(passengerFunctionalityWindow)
+        self.startsAtDropVar.set(liststations[0])
+
+        self.startsAtDropDown = OptionMenu(passengerFunctionalityWindow, self.startsAtDropVar,*liststations)
+        self.startsAtDropDown.grid(row=4, column=2, sticky=W)
+
+
+
+        print(liststations)
+
+        #Ending At Label
+        endingAtLabel = Label(passengerFunctionalityWindow, text="Starts at")
+        endingAtLabel.grid(row=5, column=1, sticky=W)
+
+        #Create View Trip History Button
+        viewTripHistoryButton = Button(passengerFunctionalityWindow, text="View Trip History", command=self.passengerFunctionalityWindowViewTripHistoryButtonClicked)
+        viewTripHistoryButton.grid(row=8, column=1, sticky=W)
+
+        #Log Out Button
+        logOutButton = Button(passengerFunctionalityWindow, text="Log Out", command=self.passengerFunctionalityWindowLogOutButtonClicked)
+        logOutButton.grid(row=8, column=5, sticky=E)
+
+        ##MANAGE CARDS LINK
+        ##END TRIP LINK
+    def displayBalance(self, cardNum):
+        self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", cardNum)
+        balance = self.cursor.fetchone()[0]
+        self.balanceVar.set("$ " + str(balance))
+
+    def passengerFunctionalityWindowViewTripHistoryButtonClicked(self):
+        # Click the View Trip History Button on Passenger Functionality Window:
+        pass
+    def passengerFunctionalityWindowLogOutButtonClicked(self):
+        # Click the Log Out Button on Passenger Functionality Window:
+        pass
+
+    def createManageCardsWindow(self):
+        self.manageCardsWindow = Toplevel()
+        self.manageCardsWindow.title("Manage Cards")
+
+    def buildManageCardsWindow(self, manageCardsWindow):
+        #Add component for manageCardWindow
+
+        #Breezecards Label
+        breezecardsLabel = Label(manageCardsWindow, text="Breeze Cards")
+        breezecardsLabel.grid(row=2, column=1, sticky=W)
+
+        #Add Card Button
+        addCardButton = Button(manageCardsWindow, text="Add Card", command=self.manageCardsWindowAddCardButtonClicked)
+        addCardButton.grid(row=5, column=5, sticky=E)
+
+        #Credit Card # Label
+        creditcardLabel = Label(manageCardsWindow, text="Credit Cards")
+        creditcardLabel.grid(row=6, column=1, sticky=W)
+
+        #Value Label
+        valueLabel = Label(manageCardsWindow, text="Value")
+        valueLabel.grid(row=7, column=1, sticky=W)
+
+        #Add Value Button
+        addValueButton = Button(manageCardsWindow, text="Add Card", command=self.manageCardsWindowAddValueButtonClicked)
+        addValueButton.grid(row=8, column=5, sticky=E)
+
+
+    def manageCardsWindowAddCardButtonClicked(self):
+        # Click the Add Card Button on Manage Cards Window:
+        pass
+
+    def manageCardsWindowAddValueButtonClicked(self):
+        # Click the Add Value Button on Manage Cards Window:
+        pass
 
     #=============Administrator Functionality Window========================
     def createAdminFunctionalityWindow(self):
