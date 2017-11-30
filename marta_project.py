@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import decimal
 import hashlib
 from hashlib import md5
+from random import *
 
 #MARTA v1.3
 #By Team 54, CS4400 2017 Fall
@@ -16,11 +17,13 @@ class MARTA_Client:
         #Connect to the database
         self.db = self.connect()
         self.cursor = self.db.cursor()
+
         # Login Window
         self.createLoginWindow()
         self.buildLoginWindow(self.loginWindow)
+
         self.loginWindow.mainloop()
-        self.newUserRegistrationWindow.mainloop()
+        #self.newUserRegistrationWindow.mainloop()
         sys.exit()
 
     #=================================LOGIN WINDOW========================================
@@ -185,21 +188,24 @@ class MARTA_Client:
         regconfirmPasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationConfirmPassword,show = '*',width=25)
         regconfirmPasswordEntry.grid(row=5, column=3, padx=1)
 
-
-        var = IntVar()
-        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=var, value=1)
+        self.var = StringVar()
+        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=self.var, value="exist")
         r1.grid(row=6, column=1, sticky=W)
         breezebox = Label(newUserRegistrationWindow, text="Card Number")
         breezebox.grid(row=7, column=1, sticky=E)
         self.registrationCardNum = StringVar()
         breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
         breezeboxEntry.grid(row=7, column=2, padx=1)
-        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=var, value=2)
+
+        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value="new")
         r2.grid(row=8, column=1, sticky=W)
+
+        self.var.set("new")
 
         # Create Button
         newRegisterButton = Button(newUserRegistrationWindow, text="Register", command=self.newRegistrationWindowButtonClicked)
         newRegisterButton.grid(row=8, column=4, sticky=E)
+
 
     def newRegistrationWindowButtonClicked(self):
         #Clock the button on Register Window
@@ -208,6 +214,7 @@ class MARTA_Client:
         self.regemail = self.registrationEmailAddress.get()
         self.regpassword = self.registrationPassword.get()
         self.regconfirmpassword = self.registrationConfirmPassword.get()
+        self.radiobuttonvalue = self.var.get()
 
         #TODO: password hashing before input in the db
         # Error message for username input empty
@@ -223,8 +230,13 @@ class MARTA_Client:
             messagebox.showwarning("Password input is empty", "Please enter password.")
             return False
 
+        #Error message for password not longer than 8 characters
+        if (len(self.regpassword) < 8):
+            messagebox.showwarning("Password input invalid", "Password has to be longer than 8 characters/numbers. \n (password is case sensitive)")
+            return False
+
         #Error message for email not valid
-        if not (re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', self.emailAddress)):
+        if not (re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', self.regemail)):
             messagebox.showwarning("Not a valid email", "Please enter valid E-mail address.")
             return False
         #Error message for username input already exist in db
@@ -237,24 +249,81 @@ class MARTA_Client:
         isEmail = self.cursor.execute("SELECT * FROM Passenger WHERE email = %s", self.regemail)
         if isEmail:
             messagebox.showwarning("Email already exist", "The email you entered already exist. \n Try different email.")
+            return False
 
         #Error message for password not matching confirmpassword
         if (self.regpassword != self.regconfirmpassword):
             messagebox.showwarning("Password confirmation Error", "Password and Confirm password doesn't match.")
-        
+            return False
+     
         #For clicking "Use my existing Breezecard"
-        #Error message for Breezecard input empty
-        #Error message for Breezecard input invalid (less than 16-digit)
-        #Error message for Breezecard input not exist in db
-        #1) If Breezecard input doesn't have user -> put it in Breezecard table (update)
-        #2) If Breezecard input already have user -> delete from Breezecard table and put in Conflict table (suspend)
+        if (self.radiobuttonvalue == "exist"):
+            self.existBreeze = self.registrationCardNum.get()
+            #Error message for Breezecard input empty
+            if not self.existBreeze:
+                messagebox.showwarning("Exist card input is empty", "Please enter the existing Breezecard Number.")
+                return False
+
+            #Error message for Breezecard input invalid (less than 16-digit)
+            if (len(self.existBreeze) != 16):
+                messagebox.showwarning("Breezecard input invalid", "Breezecard number is invalid. \n Breezecard number must be 16-digit long.")
+            else:
+                #Error message for Breezecard input invalid (input contains other things than number)
+                #Error message for Breezecard input not exist in db
+                isBreezecard = self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s", self.existBreeze)
+                if not isBreezecard:
+                    messagebox.showwarning("Breezecard doesn't exist", "Breezecard you put in doesn't not exist in our system.")
+                    return False
+
+                self.cursor.execute("SELECT cUsername FROM Breezecard WHERE cardNum = %s", self.existBreeze)
+                hasUser = self.cursor.fetchone()[0]
+                #1) If Breezecard input doesn't have user -> put it in Breezecard table (update)
+                if not hasUser:
+                    self.hashpassword = self.computeMD5hash(self.regpassword)
+                    self.cursor.execute("INSERT INTO User(username, password, IsAdmin) VALUES(%s, %s, FALSE)", (self.regusername, self.hashpassword))
+                    self.cursor.execute("INSERT INTO Passenger(pUsername, email) VALUES(%s, %s)", (self.regusername, self.regemail))
+                    self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)", (self.existBreeze, self.regusername))
+                    self.db.commit()
+                    messagebox.showwarning("Registration Success", "You have successfully registered to MARTA system! Please log in.")
+                    self.newUserRegistrationWindow.destroy()
+                    return True
+                #2) If Breezecard input already have user -> delete from Breezecard table and put in Conflict table (suspend)
+                else:
+                    currentTime = datetime.now()
+                    currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S")
+                    self.hashpassword = self.computeMD5hash(self.regpassword)
+                    self.cursor.execute("INSERT INTO User(username, password, IsAdmin) VALUES(%s, %s, FALSE)", (self.regusername, self.hashpassword))
+                    self.cursor.execute("INSERT INTO Passenger(pUsername, email) VALUES(%s, %s)", (self.regusername, self.regemail))
+                    self.cursor.execute("INSERT INTO Conflict(conUsername, conCardNum, dateTime) VALUES(%s, %s, %s)", (self.regusername, self.existBreeze, currentTime))
+                    self.db.commit()
+                    messagebox.showwarning("Registration Success", "Your account has been made but the card already has existing user. \n Please contact one of our representatives.")
+                    self.newUserRegistrationWindow.destroy()
+                    return True
+
+
 
         #For clicking "Create a New Breezecard" - make random 16-digit that doesn't exist in db
+        if (self.radiobuttonvalue == "new"):
+            self.newBreeze = str(randint(0,9)) + str(randint(100000000000000,999999999999999))
+            self.hashpassword = self.computeMD5hash(self.regpassword)
+            self.cursor.execute("INSERT INTO User(username, password, IsAdmin) VALUES(%s, %s, FALSE)", (self.regusername, self.hashpassword))
+            self.cursor.execute("INSERT INTO Passenger(pUsername, email) VALUES(%s, %s)", (self.regusername, self.regemail))
+            self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)", (self.newBreeze, self.regusername))
+            self.db.commit()
+            messagebox.showwarning("Registration Sucess", "You have successfully registered to MARTA system! Please log in.")
+            self.newUserRegistrationWindow.destroy()
+            return True
 
     #=====================Passenger Functionality Window=======================
     def createPassengerFunctionalityWindow(self):
         self.passengerFunctionalityWindow = Toplevel()
         self.passengerFunctionalityWindow.title("Welcome to Marta")
+
+        def on_closing():
+            if messagebox.askokcancel("Quit", "Do you want to quit?"):
+                self.loginWindow.destroy()
+
+        self.passengerFunctionalityWindow.protocol("WM_DELETE_WINDOW", on_closing)
 
     def buildPassengerFunctionalityWindow(self, passengerFunctionalityWindow):
         #Add components for passengerFunctionalityWindow
@@ -267,6 +336,12 @@ class MARTA_Client:
     def createAdminFunctionalityWindow(self):
         self.adminFunctionalityWindow = Toplevel()
         self.adminFunctionalityWindow.title("Administrator")
+
+        def on_closing():
+            if messagebox.askokcancel("Quit", "Do you want to quit?"):
+                self.loginWindow.destroy()
+
+        self.adminFunctionalityWindow.protocol("WM_DELETE_WINDOW", on_closing)
 
     def buildAdminFunctionalityWindow(self, adminFunctionalityWindow):
         #Add component for adminFunctionalityWindow
