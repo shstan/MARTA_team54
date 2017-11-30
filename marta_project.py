@@ -282,7 +282,7 @@ class MARTA_Client:
                     self.hashpassword = self.computeMD5hash(self.regpassword)
                     self.cursor.execute("INSERT INTO User(username, password, IsAdmin) VALUES(%s, %s, FALSE)", (self.regusername, self.hashpassword))
                     self.cursor.execute("INSERT INTO Passenger(pUsername, email) VALUES(%s, %s)", (self.regusername, self.regemail))
-                    self.cursor.execute("UPDATE Breezecard SET cUsername = %s", self.regusername)
+                    self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s", (self.regusername, self.regpassword))
                     self.db.commit()
                     messagebox.showwarning("Registration Success", "You have successfully registered to MARTA system! Please log in.")
                     self.newUserRegistrationWindow.destroy()
@@ -332,15 +332,16 @@ class MARTA_Client:
         self.passusername = self.loginUsername.get()
         self.cursor.execute("SELECT cardNum FROM Breezecard WHERE cUsername = %s", self.passusername)
         myCards = self.cursor.fetchall()
-        listmyCards = []
+        self.listmyCards = []
         for card in myCards:
-            listmyCards.append(card[0])
-        print(listmyCards)
+            self.listmyCards.append(card[0])
 
         #Welcome user label
         welcomeLabel = Label(passengerFunctionalityWindow, text= ("Welcome, " + self.passusername))
         welcomeLabel.grid(row=1, column=5, sticky=E)
 
+
+        #===================================================Manage Cards==========================================================
         #Breezecard Label
         breezecardLabel = Label(passengerFunctionalityWindow, text="Breezecard: ")
         breezecardLabel.grid(row=2, column=1, sticky=W)
@@ -350,7 +351,7 @@ class MARTA_Client:
         balanceLabel.grid(row=3, column=1, sticky=W)
 
         #Balance Showing Label
-        self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", listmyCards[0])
+        self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", self.listmyCards[0])
         balance = self.cursor.fetchone()[0]
 
         self.balanceVar = StringVar()
@@ -361,51 +362,74 @@ class MARTA_Client:
 
         #Breezecard Dropdown Menu
         self.breezecardDropVar = StringVar(passengerFunctionalityWindow)
-        self.breezecardDropVar.set(listmyCards[0])
+        self.breezecardDropVar.set(self.listmyCards[0])
 
-        self.breezecardDropDown = OptionMenu(passengerFunctionalityWindow, self.breezecardDropVar, *listmyCards, command = self.displayBalance)
+        self.breezecardDropDown = OptionMenu(passengerFunctionalityWindow, self.breezecardDropVar, *self.listmyCards, command = self.displayBalance)
         self.breezecardDropDown.grid(row=2, column=2, sticky=W)
 
         #Manage Cards Button
         manageCardButton = Button(passengerFunctionalityWindow, text="Manage Cards", command=self.passengerManageCardButtonClicked)
         manageCardButton.grid(row=2, column=3, sticky=W+E)
 
+        #======================================================Start and End Trip=================================================
         #Starts At Label
         startsAtLabel = Label(passengerFunctionalityWindow, text="Starting at: ")
         startsAtLabel.grid(row=4, column=1, sticky=W)
 
-        #Starts At Dropdown Menu
+        #Starts At and Ends At Dropdown Menu
         self.cursor.execute("SELECT * FROM Station")
         stations = self.cursor.fetchall()
-        liststations = []
+        self.liststations = []
+        self.busstations = []
+        self.trainstations = []
         self.dictionarystations = {}
         #index: 0-stopID, 1-name, 2-IsTrain, 3-fare, 4-closedStatus
         for station in stations:
             station_name = station[1]
             if (station[2] == 0):
                 station_name = station_name + "(Bus station)"
-            station_name = station_name + " - $" + "{0:.2f}".format(station[3])
-            liststations.append(station_name)
+                station_name = station_name + " - $" + "{0:.2f}".format(station[3])
+                self.busstations.append(station_name)
+                self.liststations.append(station_name)
+            else:
+                station_name = station_name + " - $" + "{0:.2f}".format(station[3])
+                self.trainstations.append(station_name)
+                self.liststations.append(station_name)
             self.dictionarystations[station_name] = station[0]
 
-        self.startsAtDropVar = StringVar(passengerFunctionalityWindow)
-        self.startsAtDropVar.set(liststations[0])
+        self.dictionaryEndStations = {}
+        for station in self.liststations:
+            if "(Bus station)" in station:
+                self.dictionaryEndStations[station] = self.busstations
+            else:
+                self.dictionaryEndStations[station] = self.trainstations
 
-        self.startsAtDropDown = OptionMenu(passengerFunctionalityWindow, self.startsAtDropVar,*liststations)
+        self.startsAtDropVar = StringVar(passengerFunctionalityWindow)
+        self.endsAtDropVar = StringVar(passengerFunctionalityWindow)
+
+        self.startsAtDropVar.trace("w", self.update_options)
+
+        self.startsAtDropDown = OptionMenu(passengerFunctionalityWindow, self.startsAtDropVar,*self.liststations)
         self.startsAtDropDown.grid(row=4, column=2, sticky=W)
 
-        #Starts At Button toggling (checking whether trip has ended)
+        self.endsAtDropDown = OptionMenu(passengerFunctionalityWindow, self.endsAtDropVar, "")
+        self.endsAtDropDown.grid(row=5, column=2, sticky=W)
+
+        self.startsAtDropVar.set(self.liststations[0])
 
         #Starts At Button
-        self.startAtButton = Button(passengerFunctionalityWindow, text="Start Trip", command=self.toggle_startbutton)
+        self.startAtButton = Button(passengerFunctionalityWindow, text="Start Trip", state=NORMAL, command=self.toggle_startbutton)
         self.startAtButton.grid(row=4, column=3, sticky=W+E)
 
         #Ending At Label
         endingAtLabel = Label(passengerFunctionalityWindow, text="Ending at: ")
         endingAtLabel.grid(row=5, column=1, sticky=W)
 
-        #Ending At Dropdown Menu
-        
+        #Ends At Button
+        self.endsAtButton = Button(passengerFunctionalityWindow, text="End Trip", command=self.toggle_endbutton)
+        self.endsAtButton.grid(row=5, column=3, sticky=W+E)
+
+        #=================================================TRIP History=====================================================
 
         #Create View Trip History Button
         viewTripHistoryButton = Button(passengerFunctionalityWindow, text="View Trip History", command=self.passengerFunctionalityWindowViewTripHistoryButtonClicked)
@@ -423,19 +447,91 @@ class MARTA_Client:
         balance = self.cursor.fetchone()[0]
         self.balanceVar.set("$ " + str(balance))
 
+    def update_options(self, *args):
+        updatedEndList = self.dictionaryEndStations[self.startsAtDropVar.get()]
+        self.endsAtDropVar.set(updatedEndList[0])
+
+        menu = self.endsAtDropDown['menu']
+        menu.delete(0, 'end')
+        for updatedEnd in updatedEndList:
+            menu.add_command(label=updatedEnd, command=lambda endingstation=updatedEnd: self.endsAtDropVar.set(endingstation))       
+
     def toggle_startbutton(self):
         #Press Start Trip
-        print(self.startsAtDropVar.get())
         startID = self.dictionarystations[self.startsAtDropVar.get()]
-        print(startID)
-        if self.startAtButton["text"] == "Start Trip":
-            self.startAtButton["text"] = "In Progress"
+        breezecardUsed =self.breezecardDropVar.get()
+
+        self.cursor.execute("SELECT IsTrain FROM Station WHERE (fare < (SELECT value FROM Breezecard WHERE cardNum = %s)) AND (stopID = %s)", (breezecardUsed, startID))
+        constraintStation = self.cursor.fetchone()
+        #Error: Buzzcard doesn't have enough balance
+        if not constraintStation:
+            messagebox.showwarning("Cannot start trip", "You don't have enough balance on your Breezecard.")
+            return False
+
+        #Error: Buzzcard is suspended
+        self.cursor.execute("SELECT * FROM Conflict WHERE conCardNum = %s", breezecardUsed)
+        constraintBuzzcard = self.cursor.fetchall()
+        if constraintBuzzcard:
+            messagebox.showwarning("Cannot start trip", "Your buzzcard is suspended. \n Please call/email one of our representatives.")
+            return False
+
+        #Error: passenger already is in trip
+        for checker in self.listmyCards:
+            self.cursor.execute("SELECT startID, endID FROM Trip WHERE bcNum = %s", checker)
+            ended = self.cursor.fetchall()
+            for end in ended:
+                if not end[1]:
+                    self.inverse_dictionary = {v: k for k, v in self.dictionarystations.items()}
+                    myTripOrigin = self.inverse_dictionary[end[0]]
+                    self.startsAtDropVar.set(myTripOrigin)
+                    self.startsAtDropDown.config(state=DISABLED)
+
+                    self.startAtButton.config(text="In Progress")
+                    self.startAtButton.config(state=DISABLED)
+                    messagebox.showwarning("Cannot start trip", "You are already in trip. Please end the trip before starting another.")
+                    return False
+
+        #Start Trip
+        currentTime = datetime.now()
+        currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S")
+        self.cursor.execute("SELECT fare FROM Station WHERE stopID = %s", startID)
+        FareStart = self.cursor.fetchone()[0]
+        print(type(FareStart))
+        self.startAtButton.config(text="In Progress")
+        self.startAtButton.config(state=DISABLED)
+        self.startsAtDropDown.config(state=DISABLED)
+        self.cursor.execute("INSERT INTO Trip(bcNum, startTime, currentFare, startID, endID) VALUES(%s, %s, %s, %s, NULL)",
+            (breezecardUsed, currentTime, FareStart, startID))
+        self.cursor.execute("UPDATE Breezecard SET value = value - %s WHERE cardNum = %s", (FareStart, breezecardUsed))
+        self.db.commit()
+        messagebox.showwarning("Trip Success", "You are now in trip!")
+        return True
+
+    def toggle_endbutton(self):
+        #Press End Trip
+        #cards = self.listmyCards
+        willendID = self.dictionarystations[self.endsAtDropVar.get()]
+        #startID = self.dictionarystations[self.startsAtDropVar.get()]
+        #print(cards, willendID, startID)
+
+        self.cursor.execute("SELECT * FROM Trip WHERE (endID IS NULL) AND (bcNum IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s))", self.passusername)
+        notendedTrip = self.cursor.fetchall()
+        if not notendedTrip:
+            messagebox.showwarning("All trips ended", "You are not in trip right now.")
+            return False
         else:
-            self.startAtButton["text"] = "Start Trip"
+            self.startAtButton.config(text="Start Trip")
+            self.startAtButton.config(state=NORMAL)
+            self.startsAtDropDown.config(state=NORMAL)
+            self.cursor.execute("UPDATE Trip SET endID = %s WHERE (endID IS NULL) AND (bcNum IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s))", (willendID, self.passusername))
+            self.db.commit()
+            messagebox.showwarning("Trip Success", "You have arrived to your destiny. \n Thank you for using MARTA")
+            return True
 
     def passengerFunctionalityWindowViewTripHistoryButtonClicked(self):
         # Click the View Trip History Button on Passenger Functionality Window:
         pass
+
     def passengerFunctionalityWindowLogOutButtonClicked(self):
         # Click the Log Out Button on Passenger Functionality Window:
         pass        
