@@ -366,14 +366,19 @@ class MARTA_Client:
         self.breezecardDropDown = OptionMenu(passengerFunctionalityWindow, self.breezecardDropVar, *listmyCards, command = self.displayBalance)
         self.breezecardDropDown.grid(row=2, column=2, sticky=W)
 
+        #Manage Cards Button
+        manageCardButton = Button(passengerFunctionalityWindow, text="Manage Cards", command=self.passengerManageCardButtonClicked)
+        manageCardButton.grid(row=2, column=3, sticky=W+E)
+
         #Starts At Label
-        startsAtLabel = Label(passengerFunctionalityWindow, text="Starts at: ")
+        startsAtLabel = Label(passengerFunctionalityWindow, text="Starting at: ")
         startsAtLabel.grid(row=4, column=1, sticky=W)
 
         #Starts At Dropdown Menu
         self.cursor.execute("SELECT * FROM Station")
         stations = self.cursor.fetchall()
         liststations = []
+        self.dictionarystations = {}
         #index: 0-stopID, 1-name, 2-IsTrain, 3-fare, 4-closedStatus
         for station in stations:
             station_name = station[1]
@@ -381,6 +386,7 @@ class MARTA_Client:
                 station_name = station_name + "(Bus station)"
             station_name = station_name + " - $" + "{0:.2f}".format(station[3])
             liststations.append(station_name)
+            self.dictionarystations[station_name] = station[0]
 
         self.startsAtDropVar = StringVar(passengerFunctionalityWindow)
         self.startsAtDropVar.set(liststations[0])
@@ -388,13 +394,18 @@ class MARTA_Client:
         self.startsAtDropDown = OptionMenu(passengerFunctionalityWindow, self.startsAtDropVar,*liststations)
         self.startsAtDropDown.grid(row=4, column=2, sticky=W)
 
+        #Starts At Button toggling (checking whether trip has ended)
 
-
-        print(liststations)
+        #Starts At Button
+        self.startAtButton = Button(passengerFunctionalityWindow, text="Start Trip", command=self.toggle_startbutton)
+        self.startAtButton.grid(row=4, column=3, sticky=W+E)
 
         #Ending At Label
-        endingAtLabel = Label(passengerFunctionalityWindow, text="Starts at")
+        endingAtLabel = Label(passengerFunctionalityWindow, text="Ending at: ")
         endingAtLabel.grid(row=5, column=1, sticky=W)
+
+        #Ending At Dropdown Menu
+        
 
         #Create View Trip History Button
         viewTripHistoryButton = Button(passengerFunctionalityWindow, text="View Trip History", command=self.passengerFunctionalityWindowViewTripHistoryButtonClicked)
@@ -407,16 +418,36 @@ class MARTA_Client:
         ##MANAGE CARDS LINK
         ##END TRIP LINK
     def displayBalance(self, cardNum):
+        #DisplayBalance depends on Dropdown menu
         self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", cardNum)
         balance = self.cursor.fetchone()[0]
         self.balanceVar.set("$ " + str(balance))
+
+    def toggle_startbutton(self):
+        #Press Start Trip
+        print(self.startsAtDropVar.get())
+        startID = self.dictionarystations[self.startsAtDropVar.get()]
+        print(startID)
+        if self.startAtButton["text"] == "Start Trip":
+            self.startAtButton["text"] = "In Progress"
+        else:
+            self.startAtButton["text"] = "Start Trip"
 
     def passengerFunctionalityWindowViewTripHistoryButtonClicked(self):
         # Click the View Trip History Button on Passenger Functionality Window:
         pass
     def passengerFunctionalityWindowLogOutButtonClicked(self):
         # Click the Log Out Button on Passenger Functionality Window:
-        pass
+        pass        
+
+    ##===========================================Passenger Functionality - Manage Cards==================================================
+    def passengerManageCardButtonClicked(self):
+        # Click button on passnger functionality Window:
+        # Invoke createNewManageCardsWindow; Invoke buildNewManageCardsWindow;
+
+        self.createManageCardsWindow()
+        self.buildManageCardsWindow(self.manageCardsWindow)
+        #self.passengerFunctionalityWindow.withdraw()
 
     def createManageCardsWindow(self):
         self.manageCardsWindow = Toplevel()
@@ -444,6 +475,7 @@ class MARTA_Client:
         #Add Value Button
         addValueButton = Button(manageCardsWindow, text="Add Card", command=self.manageCardsWindowAddValueButtonClicked)
         addValueButton.grid(row=8, column=5, sticky=E)
+
 
 
     def manageCardsWindowAddCardButtonClicked(self):
