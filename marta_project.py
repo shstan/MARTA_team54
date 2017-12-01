@@ -39,6 +39,9 @@ class MARTA_Client:
         self.loginWindow.geometry("+%d+%d" % (x, y))
         self.loginWindow.deiconify()
 
+        self.viewTripHistoryExist = False
+        self.manageBreezecardExist = False
+
     def buildLoginWindow(self, loginWindow):
         # Add component for Login Window
         # Login Label
@@ -327,11 +330,13 @@ class MARTA_Client:
         self.passengerFunctionalityWindow = Toplevel()
         self.passengerFunctionalityWindow.title("Welcome to Marta")
 
-        def on_closing():
-            if messagebox.askokcancel("Quit", "Do you want to quit?"):
-                self.loginWindow.destroy()
+        self.passengerFunctionalityWindow.protocol("WM_DELETE_WINDOW", self.passenger_on_closing)
 
-        self.passengerFunctionalityWindow.protocol("WM_DELETE_WINDOW", on_closing)
+    def passenger_on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            if (self.viewTripHistoryExist):
+                self.cursor.execute("DROP VIEW TripHistory")
+            self.loginWindow.destroy()
 
     def buildPassengerFunctionalityWindow(self, passengerFunctionalityWindow):
         self.passusername = self.loginUsername.get()
@@ -769,6 +774,12 @@ class MARTA_Client:
     def createViewTripHistoryWindow(self):
         self.viewTripHistoryWindow = Toplevel()
         self.viewTripHistoryWindow.title("Trip History")
+        self.viewTripHistoryWindow.protocol("WM_DELETE_WINDOW", self.dropview)
+
+    def dropview(self):
+        self.cursor.execute("DROP VIEW TripHistory")
+        self.viewTripHistoryExist = 0
+        self.viewTripHistoryWindow.withdraw()
 
     def buildViewTripHistoryWindow(self, viewTripHistoryWindow):
         #self.passusername -> user
@@ -808,8 +819,11 @@ class MARTA_Client:
         self.viewTripHistoryTree.heading("fare", text="Fare Paid")
         self.viewTripHistoryTree.heading("cardNum", text="Card #")
 
-        self.cursor.execute("SELECT startTime, startID, endID, currentFare, bcNum FROM Trip WHERE bcNUM IN ("
-            "SELECT cardNum FROM Breezecard WHERE cUsername = %s)", self.passusername)
+        if not self.viewTripHistoryExist:
+            self.viewTripHistoryExist = True
+            self.cursor.execute("CREATE VIEW TripHistory AS (SELECT startTime, startID, endID, currentFare, bcNum FROM Trip WHERE bcNUM IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s))", self.passusername)
+
+        self.cursor.execute("SELECT * FROM TripHistory")
         self.viewTripHistoryTuple = self.cursor.fetchall()
         self.viewTripHistoryStartTime = []
         self.viewTripHistoryStartStation = []
@@ -864,47 +878,319 @@ class MARTA_Client:
                 messagebox.showwarning("Input invalid", "The Start Time input is invalid.")
                 return False
 
-        print(startDateFormat, endDateFormat)
+        self.cursor.execute("DROP VIEW TripHistory")
+        self.cursor.execute("CREATE VIEW TripHistory AS (SELECT startTime, startID, endID, currentFare, bcNum FROM Trip WHERE(bcNum IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s)) AND (startTime >= %s) AND (startTime <= %s))", (self.passusername, startDateFormat, endDateFormat))
+
+        self.buildViewTripHistoryWindow(self.viewTripHistoryWindow)
+        return True
 
         #If only endTime was input
         #If both startTime and endTime was input
 
     def viewTripHistoryResetClicked(self):
-        pass
+        self.cursor.execute("DROP VIEW TripHistory")
+        self.cursor.execute("CREATE VIEW TripHistory AS (SELECT startTime, startID, endID, currentFare, bcNum FROM Trip WHERE bcNUM IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s))", self.passusername)
+        self.buildViewTripHistoryWindow(self.viewTripHistoryWindow)
+        return True
 
     def passengerFunctionalityWindowLogOutButtonClicked(self):
         # Click the Log Out Button on Passenger Functionality Window:
-        pass  
+        if (self.viewTripHistoryExist):
+            self.cursor.execute("DROP VIEW TripHistory")
+        
+        self.loginWindow.destroy()
+
 
     #=============Administrator Functionality Window========================
     def createAdminFunctionalityWindow(self):
         self.adminFunctionalityWindow = Toplevel()
         self.adminFunctionalityWindow.title("Administrator")
 
-        def on_closing():
-            if messagebox.askokcancel("Quit", "Do you want to quit?"):
-                self.loginWindow.destroy()
+        self.adminFunctionalityWindow.protocol("WM_DELETE_WINDOW", self.administrator_on_closing)
 
-        self.adminFunctionalityWindow.protocol("WM_DELETE_WINDOW", on_closing)
+    def administrator_on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            if (self.manageBreezecardExist):
+                self.cursor.execute("DROP VIEW ManageBreezecard")
+            self.loginWindow.destroy()
 
     def buildAdminFunctionalityWindow(self, adminFunctionalityWindow):
+        self.adminusername = self.loginUsername.get()
         #Add component for adminFunctionalityWindow
 
         #Station Management Button
         stationManagementButton = Button(adminFunctionalityWindow, text="Station Management")
-        stationManagementButton.grid(row=1, column=3, sticky=W + E)
+        stationManagementButton.grid(row=1, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Suspend Cards Button
         suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards")
-        suspendedCardButton.grid(row=3, column=3, sticky=W + E)
+        suspendedCardButton.grid(row=3, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Breezecard Management Button
-        breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management")
-        breezecardManagementButton.grid(row=5, column=3, sticky=W + E)
+        breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management", command=self.adminFunctionalityWindowBreezecardManagementButtonClicked)
+        breezecardManagementButton.grid(row=5, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Passenger Flow Report Button
         passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report")
-        passengerFlowReportButton.grid(row=7, column=3, sticky=W + E)
+        passengerFlowReportButton.grid(row=7, column=3, padx = 20, pady = 10, sticky=W + E)
+
+        logoutButton = Button(adminFunctionalityWindow, text = "Log Out", command=self.admin_logout)
+        logoutButton.grid(row=9, column=3, padx=40, pady=10, sticky=W + E)
+
+    def admin_logout(self):
+        if (self.manageBreezecardExist):
+            self.cursor.execute("DROP VIEW ManageBreezecard")
+
+        self.loginWindow.destroy()
+
+    #===============Administrator Functionality - Breeze Card Management=====================
+    def adminFunctionalityWindowBreezecardManagementButtonClicked(self):
+        # Click Breeze Card Management on Admin Functionality Window:
+        # Invoke createBreezecardManagementWindow; Invoke buildBreezecardManagementWindow;
+        self.createBreezecardManagementWindow()
+        self.buildBreezecardManagementWindow(self.breezecardManagementWindow)
+
+    def createBreezecardManagementWindow(self):
+        self.breezecardManagementWindow = Toplevel()
+        self.breezecardManagementWindow.title("Breeze Card Management")
+
+        self.breezecardManagementWindow.protocol("WM_DELETE_WINDOW", self.breezecard_manage_closing)
+
+    def breezecard_manage_closing(self):
+        self.cursor.execute("DROP VIEW ManageBreezecard")
+        self.manageBreezecardExist = 0
+        self.breezecardManagementWindow.withdraw()
+
+    def buildBreezecardManagementWindow(self, breezecardManagementWindow):
+        #Add component for View Station Window
+
+        #Breeze Cards Label
+        breezecardsLabel = Label(breezecardManagementWindow,text="Breeze Cards") ###BOLD IT
+        breezecardsLabel.grid(row=1,column=1,sticky=W)
+
+        #Search/Filter Label
+        searchFilterLabel = Label(breezecardManagementWindow,text="Search/Filter") #####STRING OF STATION STOP ID
+        searchFilterLabel.grid(row=3,column=1,sticky=W)
+
+        #Owner Label
+        ownerLabel = Label(breezecardManagementWindow,text="Owner")
+        ownerLabel.grid(row=5,column=1,sticky=W)
+
+        #Owner Entry
+        self.owner = StringVar()
+        ownerEntry = Entry(breezecardManagementWindow, textvariable=self.owner,width = 20)
+        ownerEntry.grid(row=5,column=2,sticky = W)
+
+        self.showSuspendedCards=IntVar()
+        showSuspendedCardsCheckButton = Checkbutton(breezecardManagementWindow,text = "Show Suspended Cards",variable = self.showSuspendedCards)
+        showSuspendedCardsCheckButton.grid(row=5,column=4,sticky = W)
+
+        #Card Number Label
+        cardNumberLabel = Label(breezecardManagementWindow,text="Card Number")
+        cardNumberLabel.grid(row=7,column=1,sticky=W)
+
+        #Card Number Entry
+        self.card_num = StringVar()
+        cardNumberEntry = Entry(breezecardManagementWindow, textvariable=self.card_num,width = 20)
+        cardNumberEntry.grid(row=7,column=2,sticky = W)
+
+        #Reset Button
+        resetButton = Button(breezecardManagementWindow, text="Reset", command=self.breezecardManagementWindowResetButtonClicked)
+        resetButton.grid(row=7, column=5, sticky=W)
+
+        #Value between Label
+        valueBetweenLabel = Label(breezecardManagementWindow,text="Value between")
+        valueBetweenLabel.grid(row=9,column=1,sticky=W)
+
+        #Value Between Start Value Entry
+        self.startValue = StringVar()
+        startValueEntry = Entry(breezecardManagementWindow, textvariable=self.startValue,width = 8)
+        startValueEntry.grid(row=9,column=2,sticky = W)
+
+        #and Label
+        andLabel = Label(breezecardManagementWindow,text="and")
+        andLabel.grid(row=9,column=3,sticky=W)
+
+        #Value Between End Value Entry
+        self.endValue = StringVar()
+        endValueEntry = Entry(breezecardManagementWindow, textvariable=self.endValue,width = 8)
+        endValueEntry.grid(row=9,column=4,sticky = W)
+
+        #Update Filter Button
+        updateFilterButton = Button(breezecardManagementWindow, text="Update Filter", command=self.breezecardManagementWindowUpdateFilterButtonClicked)
+        updateFilterButton.grid(row=9, column=5, sticky=W)
+
+
+        #Table
+        self.cardNumValueOwnerTree = ttk.Treeview(breezecardManagementWindow,column=("card_num","value","owner"))
+        self.cardNumValueOwnerTree['show'] = 'headings'
+        self.cardNumValueOwnerTree.column("card_num",width=150,anchor="center")
+        self.cardNumValueOwnerTree.column("value",width=70,anchor="center")
+        self.cardNumValueOwnerTree.column("owner",width=120,anchor="center")
+
+        self.cardNumValueOwnerTree.heading("card_num",text="Card #")
+        self.cardNumValueOwnerTree.heading("value",text="Value")
+        self.cardNumValueOwnerTree.heading("owner",text="Owner")
+
+        if not self.manageBreezecardExist:
+            self.manageBreezecardExist = True
+            self.cursor.execute("CREATE VIEW ManageBreezecard AS (SELECT * FROM Breezecard)")
+
+        self.cursor.execute("SELECT * FROM ManageBreezecard")
+        self.breezecardInfoTuple = self.cursor.fetchall()
+        self.card_nums = []
+        self.values = []
+        self.owners = []
+        self.cardNumValueOwnerTreeIndex = 0
+        for breezecardInfo in self.breezecardInfoTuple:
+            self.card_nums.append(breezecardInfo[0])
+            self.values.append(breezecardInfo[1])
+            self.owners.append(breezecardInfo[2])
+            self.cardNumValueOwnerTree.insert('',self.cardNumValueOwnerTreeIndex,values = breezecardInfo)
+            self.cardNumValueOwnerTreeIndex+=1
+
+        self.cardNumValueOwnerTree.grid(row=10,column=1,padx=20,pady=(10,10))
+        self.cardNumValueOwnerTree.bind("<ButtonRelease-1>",self.selectElement)
+
+        #Set Value of Selected Card Button
+        setValueOfSelectedCardButton= Button(breezecardManagementWindow, text="Set Value of Selected Card",command=self.breezecardManagementWindowSetValueOfSelectedCardButtonClicked)
+        setValueOfSelectedCardButton.grid(row=15, column=2, padx=20,pady=(0,10))
+
+        #Transfer Selected Card Button
+        transferSelectedCardButton = Button(breezecardManagementWindow, text="Transfer Selected Card",command=self.breezecardManagementWindowTransferSelectedCardButtonClicked)
+        transferSelectedCardButton.grid(row=16, column=2, padx=20,pady=20)
+
+        #Set Value of Selected Card Entry
+        self.setValueOfSelectedCard = StringVar()
+        setValueOfSelectedCardEntry = Entry(breezecardManagementWindow, textvariable=self.setValueOfSelectedCard,width = 10)
+        setValueOfSelectedCardEntry.grid(row=15,column=1,sticky = W)
+
+
+        #Transfer Selected Card Entry
+        self.transferSelectedCard = StringVar()
+        transferSelectedCardEntry = Entry(breezecardManagementWindow, textvariable=self.transferSelectedCard,width = 10)
+        transferSelectedCardEntry.grid(row=16,column=1,sticky = W)
+
+    def breezecardManagementWindowResetButtonClicked(self):
+        #Click the Reset Button  on Breezecard Management Window:
+        self.buildBreezecardManagementWindow(self.breezecardManagementWindow)
+
+    def breezecardManagementWindowUpdateFilterButtonClicked(self):
+        #Click the Update Filter Button  on Breezecard Management Window:
+        #Obtain the owner, card number, start and end values
+        self.ownerFilter = self.owner.get()
+        print(type(self.ownerFilter))
+        print(self.ownerFilter)
+        self.card_numFilter = self.card_num.get()
+        self.startValueFilter = self.startValue.get()
+        self.endValueFilter = self.endValue.get()
+
+        #Check to see if digit
+        if self.card_numFilter.isdigit()==0:
+            messagebox.showwarning("Invalid Value.","The value should be a number.")
+            return False
+
+        #Check to see if digit        
+        if self.startValueFilter.isdigit()==0:
+            messagebox.showwarning("Invalid Value.","The value should be a number.")
+            return False
+
+        #Check to see if digit
+        if self.endValueFilter.isdigit()==0:
+            messagebox.showwarning("Invalid Value.","The value should be a number.")
+            return False
+
+        #Error message for card number input doesn't exist in db
+        isCard_num = self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s",self.card_numFilter)
+        if not self.ownerFilter and not self.card_numFilter and not self.startValueFilter and not self.endValueFilter and not isCard_num:
+            messagebox.showwarning("Card Number does not exist in the Database.","Try again using an existing Card Number.")
+            return False
+
+        #Error message for owner input doesn't exist in db   
+        self.cursor.execute("SELECT username FROM Breezecard WHERE cUsername = %s",self.ownerFilter)
+        isOwner = self.cursor.fetchone()[0]
+        if not isOwner:
+            messagebox.showwarning("Owner does not exist in the Database.","Try again using an existing Owner.")
+            return False
+        #Error message for value input < 0  
+        if float(self.startValueFilter) < 0.00:
+            messagebox.showwarning("Value cannot be less than 0.","Please put a value greater than 0 but less than 1000.")
+            return False
+        #Error message for value input > 1000
+        if float(self.startValueFilter) > 1000.00:
+            messagebox.showwarning("Value cannot be greater than 1000.","Please put a value less than 1000 but greater than 0.")
+            return False
+        #Error message for value input < 0  
+        if float(self.endValueFilter) < 0.00:
+            messagebox.showwarning("Value cannot be less than 0.","Please put a value greater than 0 but less than 1000.")
+            return False
+        #Error message for value input > 1000
+        if float(self.endValueFilter) > 1000.00:
+            messagebox.showwarning("Value cannot be greater than 1000.","Please put a value less than 1000 but greater than 0.")
+            return False
+
+        #if not self.ownerFilter and not card_numFilter and not self.startValueFilter and not self.showSuspendedCards.get() == 1
+
+        else:
+            pass
+            #self.cursor.execute("SELECT cardNum, value, cUsername WHERE cardNum = %s AND (value >= %s AND value <= %s) AND cUsername = %s",(self.card_numFilter,self.startValueFilter,self.endValueFilter,self.ownerFilter))
+
+    def selectElement(self,event2):
+        curElement = self.cardNumValueOwnerTree.focus()
+        print(list(self.cardNumValueOwnerTree.item(curElement)['values']))
+    
+    def breezecardManagementWindowShowSuspendedCardsChecked(self):
+        if self.showSuspendedCards.get() == 0:
+            pass
+        else:
+            suspendedCardInfo = self.cursor.execute("SELECT conCardNum, Breezecard.cUsername AS previousOwner FROM Conflict INNER JOIN Breezecard ON (conCardNum = cardNum)")
+
+            
+    def breezecardManagementWindowSetValueOfSelectedCardButtonClicked(self):
+        #Click the Set Value of Selected Card Button  on Breezecard Management Window:
+        curElement = self.cardNumValueOwnerTree.selection()
+        selectedInformation = self.cardNumValueOwnerTree.item(curElement)['values']
+        self.newValue = self.setValueOfSelectedCard.get()
+        
+        if self.newValue.isdigit()==0:
+            messagebox.showwarning("Invalid Value.","The value should be a number.")
+            return False
+        #Error: nothing selected
+        if not self.cardNumValueOwnerTree.selection():
+            messagebox.showwarning("Nothing was selected.","Please select an entry from the table.")
+            return False
+        if float(self.newValue) > 1000.00:
+            messagebox.showwarning("Breeze Card cannot exceed $1000.00.","Please enter a lower value.")
+            return False
+        if float(self.newValue) < 0.00:
+            messagebox.showwarning("Breeze Card cannot be below $0.00.", "Please enter a higher value.")
+            return False
+        else:
+            self.cursor.execute("UPDATE Breezecard SET value = %s WHERE cardNum = %s",(self.newValue,selectedInformation[0]))
+            self.db.commit()
+
+    def breezecardManagementWindowTransferSelectedCardButtonClicked(self):
+        #Click the Transfer Selected Card Button  on Breezecard Management Window:
+        curElement = self.cardNumValueOwnerTree.selection()
+        selectedInformation = self.cardNumValueOwnerTree.item(curElement)['values']
+        self.newOwner = self.transferSelectedCard.get()
+        self.cursor.execute("SELECT username FROM User WHERE username = %s", self.newOwner)
+        ownerExists=self.cursor.fetchone()[0]
+        #print(ownerExists)
+        self.cursor.execute("SELECT IsAdmin FROM User WHERE username = %s", self.newOwner)
+        is_admin=self.cursor.fetchone()[0]
+        if not self.cardNumValueOwnerTree.selection():
+            messagebox.showwarning("Nothing was selected.", "Please select an entry from the table.")
+            return False
+        if not ownerExists:
+            messagebox.showwarning("Owner does not exist.", "Please choose a currently existing owner.")
+            return False
+        if is_admin:
+            messagebox.showwarning("This is an administrator.", "Please choose a passenger.")
+            return False
+        else:
+            self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s", (self.newOwner, selectedInformation[0]))
+            self.db.commit()
 
 
     # --------------------Database Connection-----------------
