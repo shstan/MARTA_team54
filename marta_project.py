@@ -551,105 +551,91 @@ class MARTA_Client:
         self.manageCardsWindow.protocol("WM_DELETE_WINDOW", on_closing)
 
     def buildManageCardsWindow(self, manageCardsWindow):
-        #self.passusername - user
-        #self.listmyCards - list of cards
-        #Add component for manageCardWindow
+        self.manageCardsTree = ttk.Treeview(manageCardsWindow, column=("cardNum", "value"))
+        self.manageCardsTree['show'] = 'headings'
 
-        #Breezecards Title Label
+        self.manageCardsTree.column("cardNum", width=150, anchor="center")
+        self.manageCardsTree.column("value", width=150, anchor="center")
+
+        self.manageCardsTree.heading("cardNum", text="Card #")
+        self.manageCardsTree.heading("value", text="Value")
+
+        self.cursor.execute("SELECT cardNum, value FROM Breezecard WHERE cUsername = %s", self.passusername)
+        self.manageCardsTuple = self.cursor.fetchall()
+        self.manageCardNum = []
+        self.manageCardValue = []
+        self.manageCardsTreeIndex = 0
+        for entry in self.manageCardsTuple:
+            self.manageCardNum.append(entry[0])
+            self.manageCardValue.append(entry[1])
+            self.manageCardsTree.insert('', self.manageCardsTreeIndex, values=entry)
+            self.manageCardsTreeIndex+=1
+
+        #Breezecard Title Label
         breezecardsLabel = Label(manageCardsWindow, text="Breeze Cards", font="Verdana 13 bold ")
-        breezecardsLabel.grid(row=1, column=1, sticky= W+E)
+        breezecardsLabel.grid(row=0, column=1, sticky= W+E)
 
-        #Breezecard Adding Entry
+        #Table
+        self.selectedBreezecard = StringVar()
+        self.selectedBreezecard.set("")
+
+        self.manageCardsTree.grid(row=1, column=0, rowspan=8, padx = 20, pady = (10,10))
+        self.manageCardsTree.bind("<ButtonRelease-1>", self.selectItem)
+
+        #Adding Breezecard Entry
         self.entryBreezeCard = StringVar()
         breezecardEntry = Entry(manageCardsWindow, textvariable=self.entryBreezeCard, width=20)
-        breezecardEntry.grid(row=2, column=2, sticky=W)
+        breezecardEntry.grid(row=1, column=1, sticky=W)
 
         #Breezecard Adding Button
         addCardButton = Button(manageCardsWindow, text="Add Card", command=self.manageCardsWindowAddCardButtonClicked)
-        addCardButton.grid(row=2, column=3, sticky=W)
-
-
-        ManageCardTableLabel1 = Label(manageCardsWindow, text="Card #", width=20)
-        ManageCardTableLabel1.grid(row=3, column=1)
-        ManageCardTableLabel2 = Label(manageCardsWindow, text="Value", width=20)
-        ManageCardTableLabel2.grid(row=3, column=2)
-        ManageCardTableLabel3 = Label(manageCardsWindow, text="", width=20)
-        ManageCardTableLabel3.grid(row=3, column=3)
-        nextrow = 4 + self.showMyBreezecard()
-
+        addCardButton.grid(row=1, column=2, sticky=W)
 
         #Add Value to Selected Card
-        self.addValueToSelectedCardLabel = Label(manageCardsWindow, text="Add Value to Selected Card: ")
-        self.addValueToSelectedCardLabel.grid(row=nextrow, column=2, sticky=W+E)
+        self.addValueToSelectedCardLabel = Label(manageCardsWindow, text="Selected Card: ")
+        self.addValueToSelectedCardLabel.grid(row=2, column=1, sticky=W+E)
 
+        #Add Selected Card Label
+        self.selectedCardLabel = Label(manageCardsWindow, textvariable=self.selectedBreezecard, fg="blue")
+        self.selectedCardLabel.grid(row=2, column=2, sticky=W)
 
-        self.printcardNumVar = StringVar()
-        self.printcardNumVar.set("")
-
-        self.addValueToSelectedCardLabel2 = Label(manageCardsWindow, textvariable=self.printcardNumVar, fg="blue")
-        self.addValueToSelectedCardLabel2.grid(row=nextrow, column=3, sticky=W)
+        removeButton = Button(manageCardsWindow, text="Remove Selected Card", padx = 20, command=self.removeSelectedCardClicked)
+        removeButton.grid(row=3, column=2, sticky=E)
 
         #Credit Card Label
         self.creditcardLabel = Label(manageCardsWindow, text="Credit Card #: ")
-        self.creditcardLabel.grid(row=nextrow+1, column=1, sticky=W)
+        self.creditcardLabel.grid(row=5, column=1, sticky=W)
 
         #Credit card Entry
         self.entryCreditCard = StringVar()
         self.creditcardEntry = Entry(manageCardsWindow, textvariable=self.entryCreditCard, width=20)
-        self.creditcardEntry.grid(row=nextrow+1, column=2, sticky=W)
+        self.creditcardEntry.grid(row=5, column=2, sticky=W)
 
         #Value Label
         self.valueLabel = Label(manageCardsWindow, text="Value: ")
-        self.valueLabel.grid(row=nextrow+2, column=1, sticky=W)
+        self.valueLabel.grid(row=6, column=1, sticky=W)
 
         #Value Entry
         self.entryValue = StringVar()
         self.valueEntry = Entry(manageCardsWindow, textvariable=self.entryValue, width=20)
-        self.valueEntry.grid(row=nextrow+2, column=2, sticky=W)
+        self.valueEntry.grid(row=6, column=2, sticky=W)
 
         #Add Value Button
-        self.addValueButton = Button(manageCardsWindow, text="Add Value", command=self.manageCardsWindowAddValueButtonClicked)
-        self.addValueButton.grid(row=nextrow+3, column=3, sticky=W+E)
+        self.addValueButton = Button(manageCardsWindow, text="Add Value to Selected Card", command=self.manageCardsWindowAddValueButtonClicked)
+        self.addValueButton.grid(row=7, column=2, sticky=W+E)
 
-    def select_tablecard(self, num):
-        self.printcardNumVar.set(num)
 
-    def remove_tablecard(self, removenum):
-        self.cursor.execute("SELECT count(*) FROM Breezecard WHERE cUsername = %s", self.passusername)
-        myBreezecard = self.cursor.fetchone()[0]
+####IMPLEMENT REMOVE CARD
 
-        if messagebox.askokcancel("Remove card", "Are you sure you want to remove this card?"):
-            if (myBreezecard > 1):
-                self.cursor.execute("UPDATE Breezecard SET cUsername = NULL WHERE cardNum = %s", removenum)
-                self.db.commit()
-                self.manageCardsWindow.withdraw()
-                self.createManageCardsWindow()
-                self.buildManageCardsWindow(self.manageCardsWindow)
-            else:
-                randomBreezenum = str(randint(0,9)) + str(randint(100000000000000,999999999999999))
-                self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES (%s, 0.00, %s)", (randomBreezenum, self.passusername))
-                self.cursor.execute("UPDATE Breezecard SET cUsername = NULL WHERE cardNum = %s", removenum)
-                self.db.commit()
-                #self.manageCardsWindow.withdraw()
-                #self.createManageCardsWindow()
-                self.buildManageCardsWindow(self.manageCardsWindow)
-
-        #self.passengerFunctionalityWindow.withdraw()
-
-    def showMyBreezecard(self):
-        self.cursor.execute("SELECT cardNum, value FROM Breezecard WHERE cUsername = %s", self.passusername)
-        myBreezecard = self.cursor.fetchall()
-        self.myBreezecardNumButton = []
-        self.myremovecardNumButton = []
-        for index, breeze in enumerate(myBreezecard):
-            self.myBreezecardNumButton.append(breeze[0])
-            self.myremovecardNumButton.append(breeze[0])
-            cardNumButton = Button(self.manageCardsWindow, text=breeze[0], width=19, padx=6, pady=4, borderwidth=1, relief="solid", command=lambda num=breeze[0]: self.select_tablecard(num)).grid(row=3+index+1, column=1)
-            Button(self.manageCardsWindow, text=breeze[1], width=19, padx=6, pady=4, borderwidth=1, relief="solid").grid(row=3+index+1, column=2)
-            removecardNumButton = Button(self.manageCardsWindow, text="remove", width=19, padx=6, pady=4, borderwidth=1, relief="solid", command=lambda removenum=breeze[0]: self.remove_tablecard(removenum)).grid(row=3+index+1, column=3)
-            self.myBreezecardNumButton.append(cardNumButton)
-            self.myremovecardNumButton.append(cardNumButton)
-        return len(myBreezecard)
+    def selectItem(self, event):
+        # for selection debugging
+        selectedItem = self.manageCardsTree.focus()
+        selectedItem = list(self.manageCardsTree.item(selectedItem)['values'])[0]
+        selectedItem = str(selectedItem)
+        if (len(selectedItem) != 16):
+            selectedItem = "0" + selectedItem
+        self.selectedBreezecard.set(selectedItem)
+        # print("selection: ", self.suspendedCardsTree.selection())
 
     def manageCardsWindowAddCardButtonClicked(self):
         # Click the Add Card Button on Manage Cards Window:
@@ -677,14 +663,7 @@ class MARTA_Client:
             self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES (%s, 0.00, %s)", (entryBreezecard, self.passusername))
             self.db.commit()
             messagebox.showwarning("Add Card Success", "You have successfully added Breezecard to the system.")
-            rowing = 4 + self.showMyBreezecard()
-            self.addValueToSelectedCardLabel.grid(row=rowing)
-            self.addValueToSelectedCardLabel2.grid(row=rowing)
-            self.creditcardLabel.grid(row=rowing+1)
-            self.creditcardEntry.grid(row=rowing+1)
-            self.valueLabel.grid(row=rowing+2, column=1, sticky=W)
-            self.valueEntry.grid(row=rowing+2, column=2, sticky=W)
-            self.addValueButton.grid(row=rowing+3, column=3, sticky=W+E)
+            self.buildManageCardsWindow(self.manageCardsWindow)
             return True
 
         self.cursor.execute("SELECT cUsername FROM Breezecard WHERE cardNUm = %s", entryBreezecard)
@@ -694,15 +673,9 @@ class MARTA_Client:
             self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s", (self.passusername, entryBreezecard))
             self.db.commit()
             messagebox.showwarning("Add Card Success", "You have successfully added Breezecard to the system.")
-            rowing = 4 + self.showMyBreezecard()
-            self.addValueToSelectedCardLabel.grid(row=rowing)
-            self.addValueToSelectedCardLabel2.grid(row=rowing)
-            self.creditcardLabel.grid(row=rowing+1)
-            self.creditcardEntry.grid(row=rowing+1)
-            self.valueLabel.grid(row=rowing+2, column=1, sticky=W)
-            self.valueEntry.grid(row=rowing+2, column=2, sticky=W)
-            self.addValueButton.grid(row=rowing+3, column=3, sticky=W+E)
+            self.buildManageCardsWindow(self.manageCardsWindow)
             return True
+
         #3) Breezecard exist in database with user -> update to current user
         else:
             currentTime = datetime.now()
@@ -712,8 +685,33 @@ class MARTA_Client:
             messagebox.showwarning("Add Card Failed", "This Breezecard already has a user. \n Please contact one of our representatives.")
             return False
 
+    def removeSelectedCardClicked(self):
+        selectedBreezecard = self.selectedBreezecard.get()
+        #Error if not selected
+        if not selectedBreezecard:
+            messagebox.showwarning("No Selected Breezecard", "Please select a Breezecard you want to remove.")
+            return False
+
+        self.cursor.execute("SELECT COUNT(*) FROM Breezecard WHERE cUsername = %s", self.passusername)
+        numHaveBreezecard = self.cursor.fetchone()[0]
+        randomBreezecard = str(randint(0,9)) + str(randint(100000000000000,999999999999999))
+        if (numHaveBreezecard <= 1):
+            self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)", (randomBreezecard, self.passusername))
+            self.cursor.execute("UPDATE Breezecard SET cUsername = NULL WHERE cardNum = %s", self.selectedBreezecard)
+            self.db.commit()
+            messagebox.showwarning("Remove Card Success", "You have successfully added Breezecard from the system.")
+            self.buildManageCardsWindow(self.manageCardsWindow)
+            return True
+        else:
+            self.cursor.execute("UPDATE Breezecard SET cUsername = NULL WHERE cardNum = %s", selectedBreezecard)
+            self.db.commit()
+            messagebox.showwarning("Remove Card Success", "You have successfully added Breezecard from the system.")
+            self.buildManageCardsWindow(self.manageCardsWindow)
+            return True
+
     def manageCardsWindowAddValueButtonClicked(self):
         # Click the Add Value Button on Manage Cards Window:
+        breezecard_selected = self.selectedBreezecard.get()
         entryCreditCard = self.entryCreditCard.get()
         entryValue = self.entryValue.get()
 
@@ -722,12 +720,41 @@ class MARTA_Client:
             messagebox.showwarning("Credit Card Input Empty", "Please input your credit card information.")
             return False
         #Error: entryValue empty
+        if not entryValue:
+            messagebox.showwarning("Value Input Empty", "Please input amount of value you want to put in your Breezecard")
+            return False
         #Error: breezecard not selected
+        if not breezecard_selected:
+            messagebox.showwarning("No Selected Breezecard", "Please select a Breezecard you want to remove.")
+            return False
         #Error: entryCreditCard not 16 digits long
+        if (len(entryCreditCard) != 16):
+            messagebox.showwarning("Invalid Credit Card", "The Credit Card is invalid. \nCredit Card input should be 16-digit number.")
+            return False
         #Error: entryCreditCard not digit
+        if (entryCreditCard.isdigit() == 0):
+            messagebox.showwarning("Invalid Credit Card", "The Credit Card is invalid. \nCredit Card input should be 16-digit number.")
+            return False
+        #Error: entryValue not digit
+        if (entryValue.isdigit() == 0):
+            messagebox.showwarning("Invalid Value", "The value should be a number.")
+            return False
+
         #Error: currentValue + newValue = 1000 (value exceeded)
+        self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", breezecard_selected)
+        card_amount = self.cursor.fetchone()[0]
+        if (float(card_amount) + float(entryValue) >= 1000.00):
+            messagebox.showwarning("Too Much Value Input", "Breezecard cannot hold value more than $1000.00.")
+            return False
 
         #Add Value to the Card and update the page
+        final_value = float(card_amount) + float(entryValue)
+        final_value = "{0:.2f}".format(final_value)
+        self.cursor.execute("UPDATE Breezecard SET value = %s WHERE cardNum = %s", (final_value, breezecard_selected))
+        self.db.commit()
+        messagebox.showwarning("Add Value Success", "You have successfully added value to your selected Breezecard.")
+        self.buildManageCardsWindow(self.manageCardsWindow)
+        return True
 
 
 
