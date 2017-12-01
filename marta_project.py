@@ -701,7 +701,7 @@ class MARTA_Client:
             return False
         print("self.suspendedCardsTree.item(curItem)['values'][0]) =",
               self.suspendedCardsTree.item(curItem)['values'][0])
-        oldSnake = self.suspendedCardsTree.item(curItem)['values'][0]
+        oldSnake = self.suspendedCardsTree.item(curItem)['values'][3]
 
         selectedInfo = self.suspendedCardsTree.item(curItem)['values']
 
@@ -736,11 +736,16 @@ class MARTA_Client:
             self.suspendedCardsTreeIndex += 1
         self.cursor.execute("SELECT cardNum FROM Breezecard WHERE cUsername = %s", oldSnake)
         hasCard = self.cursor.fetchone()
-        print(hasCard)
+        print("hasCard", hasCard)
+        print("oldSnake", oldSnake)
         if not hasCard:
             randomBreeze = str(randint(0, 9)) + str(randint(100000000000000, 999999999999999))
-            currentTime = datetime.now()
-            currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S")
+            self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s", randomBreeze)
+            duplicateCard = self.cursor.fetchone()
+            while duplicateCard:
+                randomBreeze = str(randint(0, 9)) + str(randint(100000000000000, 999999999999999))
+                self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s", randomBreeze)
+                duplicateCard = self.cursor.fetchone()
             self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)",
                                 (randomBreeze, oldSnake))
             #Need to check for conflicts again??
