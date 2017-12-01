@@ -265,7 +265,7 @@ class MARTA_Client:
                 return False
 
             #Error message for Breezecard input invalid (less than 16-digit)
-            if (len(self.existBreeze) != 16):
+            if (len(self.existBreeze) != 16) and self.existBreeze.isdigit():
                 messagebox.showwarning("Breezecard input invalid", "Breezecard number is invalid. \n Breezecard number must be 16-digit long.")
             else:
                 #Error message for Breezecard input invalid (input contains other things than number)
@@ -601,7 +601,7 @@ class MARTA_Client:
         stationManagementButton.grid(row=1, column=3, sticky=W + E)
 
         #Suspend Cards Button
-        suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards")
+        suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards", command=self.adminSuspendedCardsClicked)
         suspendedCardButton.grid(row=3, column=3, sticky=W + E)
 
         #Breezecard Management Button
@@ -612,13 +612,156 @@ class MARTA_Client:
         passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report")
         passengerFlowReportButton.grid(row=7, column=3, sticky=W + E)
 
+    def adminSuspendedCardsClicked(self):
+        self.createAdminSuspendedCardsWindow()
+        self.buildAdminSuspendedCardsWindow(self.adminSuspendedCardsWindow)
+
+    def createAdminSuspendedCardsWindow(self):
+        self.adminSuspendedCardsWindow = Toplevel()
+        # self.adminSuspendedCardsWindow.event_delete()
+        self.adminSuspendedCardsWindow.title("Suspended Cards")
+
+    def buildAdminSuspendedCardsWindow(self, adminSuspendedCardsWindow):
+        self.suspendedCardsTree = ttk.Treeview(adminSuspendedCardsWindow, column=("cardNum", "newOwner", "dateSuspended", "prevOwner"))
+        self.suspendedCardsTree['show'] = 'headings'
+        self.suspendedCardsTree.column("cardNum", width=150, anchor="center")
+        self.suspendedCardsTree.column("newOwner", width=70, anchor="center")
+        self.suspendedCardsTree.column("dateSuspended", width=140, anchor="center")
+        self.suspendedCardsTree.column("prevOwner", width=120, anchor="center")
+
+        self.suspendedCardsTree.heading("cardNum", text="Card #")
+        self.suspendedCardsTree.heading("newOwner", text="New Owner")
+        self.suspendedCardsTree.heading("dateSuspended", text="Date Suspended")
+        self.suspendedCardsTree.heading("prevOwner", text="Previous Owner")
+
+        self.cursor.execute("SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner "
+                            "FROM Conflict "
+                            "INNER JOIN Breezecard ON ( conCardNum = cardNum );");
+        self.suspendedCardsTuple = self.cursor.fetchall()
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex+=1
+
+        # for i in range(len(self.suspendedCardsTuple)):
+        self.suspendedCardsTree.grid(row=1, column=1, padx = 20, pady = (10, 10))
+        self.suspendedCardsTree.bind("<ButtonRelease-1>", self.selectItem)
+        assignToNewUserButton = Button(adminSuspendedCardsWindow,
+                                       text="Assign Selected Card to New Owner",
+                                       command=self.assignToNewUserButtonClicked)
+        assignToNewUserButton.grid(row=2, column=1, padx = 20, pady = (0, 10))
+        assignToPreviousOwnerButton = Button(adminSuspendedCardsWindow,
+                                             text="Assign Selected Card to Previous Owner",
+                                             command=self.assignToPreviousUserButtonClicked)
+        assignToPreviousOwnerButton.grid(row=3, column=1, padx = 20, pady = 20)
+        adminSuspendedCardsNote = Label(adminSuspendedCardsWindow, text="Assigning the card to an owner will unblock"
+                                                                        " all accounts conflicted on the same BreezeCard")
+        adminSuspendedCardsNote.grid(row=4, column = 1, padx = 20, pady = 20)
+        print("selection: ", self.suspendedCardsTree.selection())
+
+        self.suspendedCardsTree.selection()
+
+    def assignToNewUserButtonClicked(self):
+        curItem = self.suspendedCardsTree.selection()
+        print("self.suspendedCardsTree.item(curItem)['values'][0]) =",
+              self.suspendedCardsTree.item(curItem)['values'][0])
+        # for j in self.suspendedCardsTree.item(curItem)['values']:
+        #     print(j)
+
+        if not self.suspendedCardsTree.selection():
+            messagebox.showwarning("Nothing Selected", "Please select an entry in the table!")
+            return False
+
+        selectedInfo = self.suspendedCardsTree.item(curItem)['values']
+
+        self.cursor.execute("UPDATE Breezecard\n"
+                            "SET cUsername = %s\n"
+                            "WHERE cardNum = %s;", (selectedInfo[1], selectedInfo[0]))
+        self.cursor.execute("DELETE FROM Conflict\n"
+                                "WHERE conCardNum = %s;", selectedInfo[0])
+        self.db.commit()
+        for i in self.suspendedCardsTree.get_children():
+            self.suspendedCardsTree.delete(i)
+        self.cursor.execute(
+            "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner "
+            "FROM Conflict "
+            "INNER JOIN Breezecard ON ( conCardNum = cardNum );");
+        self.suspendedCardsTuple = self.cursor.fetchall()
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex += 1
+        # pass
+
+
+    def assignToPreviousUserButtonClicked(self):
+        curItem = self.suspendedCardsTree.selection()
+        print("self.suspendedCardsTree.item(curItem)['values'][0]) =",
+              self.suspendedCardsTree.item(curItem)['values'][0])
+        # for j in self.suspendedCardsTree.item(curItem)['values']:
+        #     print(j)
+
+        if not self.suspendedCardsTree.selection():
+            messagebox.showwarning("Nothing Selected", "Please select an entry in the table!")
+            return False
+
+        selectedInfo = self.suspendedCardsTree.item(curItem)['values']
+
+        self.cursor.execute("DELETE FROM Conflict\n"
+                            "WHERE conCardNum = %s;", selectedInfo[0])
+        self.db.commit()
+        for i in self.suspendedCardsTree.get_children():
+            self.suspendedCardsTree.delete(i)
+        self.cursor.execute(
+            "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner "
+            "FROM Conflict "
+            "INNER JOIN Breezecard ON ( conCardNum = cardNum );");
+        self.suspendedCardsTuple = self.cursor.fetchall()
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex += 1
+
+        # pass
+
+
+
+    def selectItem(self, event):
+        # for selection debugging
+        curItem = self.suspendedCardsTree.focus()
+        print(list(self.suspendedCardsTree.item(curItem)['values']))
+        # print("selection: ", self.suspendedCardsTree.selection())
 
     # --------------------Database Connection-----------------
     def connect(self):
         try:
             #TODO: figure out the name of the database
             db = pymysql.connect(host='academic-mysql.cc.gatech.edu',
-                                 db='cs4400_Group_54', user='cs4400_Group_54', passwd='qUYP7usT')
+                                 db='cs4400_Group_54', user='cs4400_Group_54', passwd='qUYP7usT', autocommit=True)
             return db
         except:
             messagebox.showwarning('Error!', 'Cannot connect. Internet Connection Issue or DB not ready.')
