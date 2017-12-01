@@ -617,6 +617,7 @@ class MARTA_Client:
 
 
 
+    #=================Admin Suspended Card Window======================================
     def adminSuspendedCardsClicked(self):
         self.createAdminSuspendedCardsWindow()
         self.buildAdminSuspendedCardsWindow(self.adminSuspendedCardsWindow)
@@ -627,6 +628,8 @@ class MARTA_Client:
         self.adminSuspendedCardsWindow.title("Suspended Cards")
 
     def buildAdminSuspendedCardsWindow(self, adminSuspendedCardsWindow):
+        self.suspended_card_num_asc = True
+        self.suspended_date_asc = True
         self.sort_mode = {}
         self.sort_mode['cardnum_asc'] = "ORDER BY conCardNum ASC;"
         self.sort_mode['cardnum_desc'] = "ORDER BY conCardNum DESC;"
@@ -643,7 +646,7 @@ class MARTA_Client:
         self.suspendedCardsTree.column("dateSuspended", width=140, anchor="center")
         self.suspendedCardsTree.column("prevOwner", width=120, anchor="center")
 
-        self.suspendedCardsTree.heading("cardNum", text="Card #")
+        self.suspendedCardsTree.heading("cardNum", text="Card # ▲")
         self.suspendedCardsTree.heading("newOwner", text="New Owner")
         self.suspendedCardsTree.heading("dateSuspended", text="Date Suspended")
         self.suspendedCardsTree.heading("prevOwner", text="Previous Owner")
@@ -667,7 +670,7 @@ class MARTA_Client:
             self.suspendedCardsTreeIndex+=1
 
         # for i in range(len(self.suspendedCardsTuple)):
-        self.suspendedCardsTree.grid(row=1, column=1, padx = 20, pady = (10, 10))
+        self.suspendedCardsTree.grid(row=1, column=1, padx = 20, pady = (10, 10), sticky=W+E+N+S )
         self.suspendedCardsTree.bind("<ButtonRelease-1>", self.selectItem)
         assignToNewUserButton = Button(adminSuspendedCardsWindow,
                                        text="Assign Selected Card to New Owner",
@@ -766,110 +769,6 @@ class MARTA_Client:
             self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
             self.suspendedCardsTreeIndex += 1
 
-        # pass
-
-    # # sort the table again from here with 4 functions.
-    # def suspended_cards_card_asc(self):
-    #     print("a")
-    #     self.db.commit()
-    #     for i in self.suspendedCardsTree.get_children():
-    #         self.suspendedCardsTree.delete(i)
-    #     self.cursor.execute(
-    #         "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner\n"
-    #         "FROM Conflict\n"
-    #         "INNER JOIN Breezecard ON ( conCardNum = cardNum )\n"
-    #         "ORDER BY conCardNum ASC")
-    #     self.suspendedCardsTuple = self.cursor.fetchall()
-    #     self.cardNums = []
-    #     self.newOwners = []
-    #     self.datesSuspended = []
-    #     self.prevOwners = []
-    #     self.suspendedCardsTreeIndex = 0
-    #     for entry in self.suspendedCardsTuple:
-    #         self.cardNums.append(entry[0])
-    #         self.newOwners.append(entry[1])
-    #         self.datesSuspended.append(entry[2])
-    #         self.prevOwners.append(entry[3])
-    #         self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
-    #         self.suspendedCardsTreeIndex += 1
-    #
-    #
-    # def suspended_cards_card_desc(self):
-    #     print("b")
-    #     self.db.commit()
-    #     for i in self.suspendedCardsTree.get_children():
-    #         self.suspendedCardsTree.delete(i)
-    #     self.cursor.execute(
-    #         "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner\n"
-    #         "FROM Conflict\n"
-    #         "INNER JOIN Breezecard ON ( conCardNum = cardNum )\n"
-    #         "ORDER BY conCardNum DESC")
-    #     self.suspendedCardsTuple = self.cursor.fetchall()
-    #     self.cardNums = []
-    #     self.newOwners = []
-    #     self.datesSuspended = []
-    #     self.prevOwners = []
-    #     self.suspendedCardsTreeIndex = 0
-    #     for entry in self.suspendedCardsTuple:
-    #         self.cardNums.append(entry[0])
-    #         self.newOwners.append(entry[1])
-    #         self.datesSuspended.append(entry[2])
-    #         self.prevOwners.append(entry[3])
-    #         self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
-    #         self.suspendedCardsTreeIndex += 1
-    #
-    # def suspended_cards_date_asc(self):
-    #     print("c")
-    #     self.db.commit()
-    #     for i in self.suspendedCardsTree.get_children():
-    #         self.suspendedCardsTree.delete(i)
-    #     self.cursor.execute(
-    #         "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner\n"
-    #         "FROM Conflict\n"
-    #         "INNER JOIN Breezecard ON ( conCardNum = cardNum )\n"
-    #         "ORDER BY dateTime ASC")
-    #     self.suspendedCardsTuple = self.cursor.fetchall()
-    #     self.cardNums = []
-    #     self.newOwners = []
-    #     self.datesSuspended = []
-    #     self.prevOwners = []
-    #     self.suspendedCardsTreeIndex = 0
-    #     for entry in self.suspendedCardsTuple:
-    #         self.cardNums.append(entry[0])
-    #         self.newOwners.append(entry[1])
-    #         self.datesSuspended.append(entry[2])
-    #         self.prevOwners.append(entry[3])
-    #         self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
-    #         self.suspendedCardsTreeIndex += 1
-    #
-    # def suspended_cards_date_desc(self):
-    #     print("d")
-    #     self.db.commit()
-    #     for i in self.suspendedCardsTree.get_children():
-    #         self.suspendedCardsTree.delete(i)
-    #     self.cursor.execute(
-    #         "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner\n"
-    #         "FROM Conflict\n"
-    #         "INNER JOIN Breezecard ON ( conCardNum = cardNum )\n"
-    #         "ORDER BY dateTime DESC")
-    #     self.suspendedCardsTuple = self.cursor.fetchall()
-    #     self.cardNums = []
-    #     self.newOwners = []
-    #     self.datesSuspended = []
-    #     self.prevOwners = []
-    #     self.suspendedCardsTreeIndex = 0
-    #     for entry in self.suspendedCardsTuple:
-    #         self.cardNums.append(entry[0])
-    #         self.newOwners.append(entry[1])
-    #         self.datesSuspended.append(entry[2])
-    #         self.prevOwners.append(entry[3])
-    #         self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
-    #         self.suspendedCardsTreeIndex += 1
-
-
-
-
-
 
 
     def selectItem(self, event):
@@ -877,10 +776,45 @@ class MARTA_Client:
         region = self.suspendedCardsTree.identify("region", event.x, event.y)
         if region == "heading":
             print("You clicked:", region, event.x, event.y)
-            print(self.suspendedCardsTree.identify_column(event.x))
+            print(self.suspendedCardsTree.identify_column(event.x),
+                  type(self.suspendedCardsTree.identify_column(event.x)))
+            if (self.suspendedCardsTree.identify_column(event.x) == '#1'):
+                self.suspended_card_num_asc = not self.suspended_card_num_asc
+                self.sortSuspendedCardsByTupleIndex(self.suspended_card_num_asc , 1)
+                if (self.suspended_card_num_asc):
+                    self.suspendedCardsTree.heading('#1', text='Card # ▲')
+                else:
+                    self.suspendedCardsTree.heading('#1', text='Card # ▼')
+                self.suspendedCardsTree.heading('#3', text='Date Suspended ▲▼')
+            elif (self.suspendedCardsTree.identify_column(event.x) == '#3'):
+                self.sortSuspendedCardsByTupleIndex(self.suspended_date_asc, 3)
+                if (self.suspended_date_asc):
+                    self.suspendedCardsTree.heading('#3', text='Date Suspended ▼')
+                else:
+                    self.suspendedCardsTree.heading('#3', text='Date Suspended ▲')
+                self.suspended_date_asc = not self.suspended_date_asc
+                self.suspendedCardsTree.heading('#1', text='Card # ▲▼')
+
         curItem = self.suspendedCardsTree.focus()
         print(list(self.suspendedCardsTree.item(curItem)['values']))
         # print("selection: ", self.suspendedCardsTree.selection())
+
+    def sortSuspendedCardsByTupleIndex(self, asc, ind):
+        for i in self.suspendedCardsTree.get_children():
+            self.suspendedCardsTree.delete(i)
+        self.suspendedCardsTuple = sorted(self.suspendedCardsTuple, key=lambda x: x[ind], reverse = not asc)
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex += 1
 
     # --------------------Database Connection-----------------
     def connect(self):
