@@ -777,14 +777,14 @@ class MARTA_Client:
         startTimeLabel.grid(row=1, column=1, sticky=W)
 
         self.entryStartTime = StringVar()
-        startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=20)
+        startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=40)
         startTimeEntry.grid(row=1, column=2, sticky=W)
 
         endTimeLabel = Label(viewTripHistoryWindow, text="End Time: ")
         endTimeLabel.grid(row=2, column=1, sticky=W)
 
         self.entryEndTime = StringVar()
-        endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=20)
+        endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=40)
         endTimeEntry.grid(row=2, column=2, sticky=W)
 
         updateButton = Button(viewTripHistoryWindow, text="Update", command=self.viewTripHistoryUpdateClicked)
@@ -796,9 +796,9 @@ class MARTA_Client:
         self.viewTripHistoryTree = ttk.Treeview(viewTripHistoryWindow, column=("startTime", "startStation", "endStation", "fare", "cardNum"))
         self.viewTripHistoryTree['show'] = 'headings'
 
-        self.viewTripHistoryTree.column("startTime", width=200, anchor="center")
-        self.viewTripHistoryTree.column("startStation", width=150, anchor="center")
-        self.viewTripHistoryTree.column("endStation", width=150, anchor="center")
+        self.viewTripHistoryTree.column("startTime", width=150, anchor="center")
+        self.viewTripHistoryTree.column("startStation", width=200, anchor="center")
+        self.viewTripHistoryTree.column("endStation", width=200, anchor="center")
         self.viewTripHistoryTree.column("fare", width=100, anchor="center")
         self.viewTripHistoryTree.column("cardNum", width=150, anchor="center")
 
@@ -819,13 +819,15 @@ class MARTA_Client:
         self.viewTripHistoryTreeIndex = 0
         for entry in self.viewTripHistoryTuple:
             self.cursor.execute("SELECT name FROM Station WHERE stopID = %s", entry[1])
+            startName = self.cursor.fetchone()[0]
+            self.cursor.execute("SELECT name FROM Station WHERE stopID = %s", entry[2])
+            endName = self.cursor.fetchone()[0]
             self.viewTripHistoryStartTime.append(entry[0])
             self.viewTripHistoryStartStation.append(entry[1])
             self.viewTripHistoryEndStation.append(entry[2])
             self.viewTripHistoryFare.append(entry[3])
             self.viewTripHistoryCardNum.append(entry[4])
-            print(entry)
-            self.viewTripHistoryTree.insert('', self.viewTripHistoryTreeIndex, values=entry)
+            self.viewTripHistoryTree.insert('', self.viewTripHistoryTreeIndex, values=(entry[0], startName, endName, entry[3], entry[4]))
             self.viewTripHistoryTreeIndex+=1
 
         #INPUT SQL QUERY
@@ -835,10 +837,37 @@ class MARTA_Client:
 
 
     def selectTrip(self, value):
-        print(value)
+        pass
 
     def viewTripHistoryUpdateClicked(self):
-        pass
+        startTime = self.entryStartTime.get()
+        endTime = self.entryEndTime.get()
+
+        #If only startTime was input
+        if not startTime:
+            startTime = "0001-01-01 00:00:00"
+            startDateFormat = datetime.strptime(startTime, "%Y-%m-%d %H:%M:%S")
+        else:
+            try:
+                startDateFormat = datetime.strptime(startTime, "%Y-%m-%d %H:%M:%S")
+            except:
+                messagebox.showwarning("Input invalid", "The Start Time input is invalid.")
+                return False
+
+        if not endTime:
+            endTime = "9999-01-01 00:00:00"
+            endDateFormat = datetime.strptime(endTime, "%Y-%m-%d %H:%M:%S")
+        else:
+            try:
+                endDateFormat = datetime.strptime(endTime, "%Y-%m-%d %H:%M:%S")
+            except:
+                messagebox.showwarning("Input invalid", "The Start Time input is invalid.")
+                return False
+
+        print(startDateFormat, endDateFormat)
+
+        #If only endTime was input
+        #If both startTime and endTime was input
 
     def viewTripHistoryResetClicked(self):
         pass
