@@ -495,17 +495,22 @@ class MARTA_Client:
         #Start Trip
         currentTime = datetime.now()
         currentTime = currentTime.strftime("%Y-%m-%d %H:%M:%S")
+        self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", breezecardUsed)
+        ValueNow = self.cursor.fetchone()[0]
         self.cursor.execute("SELECT fare FROM Station WHERE stopID = %s", startID)
         FareStart = self.cursor.fetchone()[0]
-        print(type(FareStart))
+        ValueEnd = ValueNow - FareStart
+
         self.startAtButton.config(text="In Progress")
         self.startAtButton.config(state=DISABLED)
         self.startsAtDropDown.config(state=DISABLED)
+
         self.cursor.execute("INSERT INTO Trip(bcNum, startTime, currentFare, startID, endID) VALUES(%s, %s, %s, %s, NULL)",
             (breezecardUsed, currentTime, FareStart, startID))
-        self.cursor.execute("UPDATE Breezecard SET value = value - %s WHERE cardNum = %s", (FareStart, breezecardUsed))
+        self.cursor.execute("UPDATE Breezecard SET value = %s WHERE cardNum = %s", (ValueEnd, breezecardUsed))
         self.db.commit()
         messagebox.showwarning("Trip Success", "You are now in trip!")
+        self.displayBalance(breezecardUsed)
         return True
 
     def toggle_endbutton(self):
@@ -696,12 +701,8 @@ class MARTA_Client:
         numHaveBreezecard = self.cursor.fetchone()[0]
         randomBreezecard = str(randint(0,9)) + str(randint(100000000000000,999999999999999))
         if (numHaveBreezecard <= 1):
-            self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)", (randomBreezecard, self.passusername))
-            self.cursor.execute("UPDATE Breezecard SET cUsername = NULL WHERE cardNum = %s", self.selectedBreezecard)
-            self.db.commit()
-            messagebox.showwarning("Remove Card Success", "You have successfully added Breezecard from the system.")
-            self.buildManageCardsWindow(self.manageCardsWindow)
-            return True
+            messagebox.showwarning("Remove Card Fail", "You have to have at least one Breezecard in your account.")
+            return False
         else:
             self.cursor.execute("UPDATE Breezecard SET cUsername = NULL WHERE cardNum = %s", selectedBreezecard)
             self.db.commit()
@@ -756,12 +757,90 @@ class MARTA_Client:
         self.buildManageCardsWindow(self.manageCardsWindow)
         return True
 
-
-
-        print("clicked")
-
+    #=======================================Passenger View Trip History========================================
     def passengerFunctionalityWindowViewTripHistoryButtonClicked(self):
-        # Click the View Trip History Button on Passenger Functionality Window:
+        #Click button on passenger functionality Window
+        #Invoke createViewTripHistoryWindow; Invoke buildViewTripHistoryWindow;
+
+        self.createViewTripHistoryWindow()
+        self.buildViewTripHistoryWindow(self.viewTripHistoryWindow)
+        #self.viewTripHistoryWindow.withdraw()
+
+    def createViewTripHistoryWindow(self):
+        self.viewTripHistoryWindow = Toplevel()
+        self.viewTripHistoryWindow.title("Trip History")
+
+    def buildViewTripHistoryWindow(self, viewTripHistoryWindow):
+        #self.passusername -> user
+
+        startTimeLabel = Label(viewTripHistoryWindow, text="Start Time: ")
+        startTimeLabel.grid(row=1, column=1, sticky=W)
+
+        self.entryStartTime = StringVar()
+        startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=20)
+        startTimeEntry.grid(row=1, column=2, sticky=W)
+
+        endTimeLabel = Label(viewTripHistoryWindow, text="End Time: ")
+        endTimeLabel.grid(row=2, column=1, sticky=W)
+
+        self.entryEndTime = StringVar()
+        endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=20)
+        endTimeEntry.grid(row=2, column=2, sticky=W)
+
+        updateButton = Button(viewTripHistoryWindow, text="Update", command=self.viewTripHistoryUpdateClicked)
+        updateButton.grid(row=2, column=3, sticky=W)
+
+        resetButton = Button(viewTripHistoryWindow, text="Reset", command=self.viewTripHistoryResetClicked)
+        resetButton.grid(row=2, column=4, sticky=W)
+
+        self.viewTripHistoryTree = ttk.Treeview(viewTripHistoryWindow, column=("startTime", "startStation", "endStation", "fare", "cardNum"))
+        self.viewTripHistoryTree['show'] = 'headings'
+
+        self.viewTripHistoryTree.column("startTime", width=200, anchor="center")
+        self.viewTripHistoryTree.column("startStation", width=150, anchor="center")
+        self.viewTripHistoryTree.column("endStation", width=150, anchor="center")
+        self.viewTripHistoryTree.column("fare", width=100, anchor="center")
+        self.viewTripHistoryTree.column("cardNum", width=150, anchor="center")
+
+        self.viewTripHistoryTree.heading("startTime", text="Time")
+        self.viewTripHistoryTree.heading("startStation", text="Departure")
+        self.viewTripHistoryTree.heading("endStation", text="Arrival")
+        self.viewTripHistoryTree.heading("fare", text="Fare Paid")
+        self.viewTripHistoryTree.heading("cardNum", text="Card #")
+
+        self.cursor.execute("SELECT startTime, startID, endID, currentFare, bcNum FROM Trip WHERE bcNUM IN ("
+            "SELECT cardNum FROM Breezecard WHERE cUsername = %s)", self.passusername)
+        self.viewTripHistoryTuple = self.cursor.fetchall()
+        self.viewTripHistoryStartTime = []
+        self.viewTripHistoryStartStation = []
+        self.viewTripHistoryEndStation = []
+        self.viewTripHistoryFare = []
+        self.viewTripHistoryCardNum = []
+        self.viewTripHistoryTreeIndex = 0
+        for entry in self.viewTripHistoryTuple:
+            self.cursor.execute("SELECT name FROM Station WHERE stopID = %s", entry[1])
+            self.viewTripHistoryStartTime.append(entry[0])
+            self.viewTripHistoryStartStation.append(entry[1])
+            self.viewTripHistoryEndStation.append(entry[2])
+            self.viewTripHistoryFare.append(entry[3])
+            self.viewTripHistoryCardNum.append(entry[4])
+            print(entry)
+            self.viewTripHistoryTree.insert('', self.viewTripHistoryTreeIndex, values=entry)
+            self.viewTripHistoryTreeIndex+=1
+
+        #INPUT SQL QUERY
+
+        self.viewTripHistoryTree.grid(row=5, column=1, columnspan=6, padx=20, pady = (10,10))
+        self.viewTripHistoryTree.bind("<ButtonRelease-1>", self.selectTrip)
+
+
+    def selectTrip(self, value):
+        print(value)
+
+    def viewTripHistoryUpdateClicked(self):
+        pass
+
+    def viewTripHistoryResetClicked(self):
         pass
 
     def passengerFunctionalityWindowLogOutButtonClicked(self):
