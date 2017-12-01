@@ -152,59 +152,59 @@ class MARTA_Client:
 
         # Username Label
         usernameLabel = Label(newUserRegistrationWindow, text="Username")
-        usernameLabel.grid(row=2, column=2, sticky=W)
+        usernameLabel.grid(row=2, column=2, sticky=W, columnspan=2)
 
         # Email Address Label
         emailAddressLabel = Label(newUserRegistrationWindow, text="Email Address")
-        emailAddressLabel.grid(row=3, column=2, sticky=W)
+        emailAddressLabel.grid(row=3, column=2, sticky=W, columnspan=2)
 
 
         # Password Label
         passwordLabel = Label(newUserRegistrationWindow, text="Password")
-        passwordLabel.grid(row=4, column=2, sticky=W)
+        passwordLabel.grid(row=4, column=2, sticky=W, columnspan=2)
 
         # Confirm Password Label
         confirmPasswordLabel = Label(newUserRegistrationWindow, text="Confirm Password")
-        confirmPasswordLabel.grid(row=5, column=2, sticky=W)
+        confirmPasswordLabel.grid(row=5, column=2, sticky=W, columnspan=2)
 
         # Username Entry
         self.registrationUsername = StringVar()
         regusernameEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationUsername, width=25)
-        regusernameEntry.grid(row=2, column=3, padx=1)
+        regusernameEntry.grid(row=2, column=3, padx=1, columnspan=2)
 
 
         # Email Address Entry
         self.registrationEmailAddress = StringVar()
         regemailAddressEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationEmailAddress,width=25)
-        regemailAddressEntry.grid(row=3, column=3, padx=1)
+        regemailAddressEntry.grid(row=3, column=3, padx=1, columnspan=2)
 
         # Password Entry
         self.registrationPassword = StringVar()
         regpasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationPassword,show = '*',width=25)
-        regpasswordEntry.grid(row=4, column=3, padx=1)
+        regpasswordEntry.grid(row=4, column=3, padx=1, columnspan=2)
 
         # Confirm Password Entry
         self.registrationConfirmPassword = StringVar()
         regconfirmPasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationConfirmPassword,show = '*',width=25)
-        regconfirmPasswordEntry.grid(row=5, column=3, padx=1)
+        regconfirmPasswordEntry.grid(row=5, column=3, padx=1, columnspan=2)
 
         self.var = StringVar()
-        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=self.var, value="exist")
-        r1.grid(row=6, column=1, sticky=W)
+        r1 = Radiobutton(newUserRegistrationWindow, text="Enter Existing Breezecard", variable=self.var, value="exist")
+        r1.grid(row=6, column=2, sticky=W, pady=(20, 0))
         breezebox = Label(newUserRegistrationWindow, text="Card Number")
-        breezebox.grid(row=7, column=1, sticky=E)
+        breezebox.grid(row=7, column=2, sticky=E)
         self.registrationCardNum = StringVar()
         breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
-        breezeboxEntry.grid(row=7, column=2, padx=1)
+        breezeboxEntry.grid(row=7, column=3, padx=1)
 
-        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value="new")
-        r2.grid(row=8, column=1, sticky=W)
+        r2 = Radiobutton(newUserRegistrationWindow, text="Create a new Breezecard", variable=self.var, value="new")
+        r2.grid(row=8, column=2, sticky=W, pady = (30, 0))
 
         self.var.set("new")
 
         # Create Button
-        newRegisterButton = Button(newUserRegistrationWindow, text="Register", command=self.newRegistrationWindowButtonClicked)
-        newRegisterButton.grid(row=8, column=4, sticky=E)
+        newRegisterButton = Button(newUserRegistrationWindow, text="Create Account", command=self.newRegistrationWindowButtonClicked)
+        newRegisterButton.grid(row=9, column=2, sticky=E+W, pady=(50, 10), columnspan=4, padx = 30)
 
 
     def newRegistrationWindowButtonClicked(self):
@@ -600,20 +600,37 @@ class MARTA_Client:
 
         #Station Management Button
         stationManagementButton = Button(adminFunctionalityWindow, text="Station Management")
-        stationManagementButton.grid(row=1, column=3, sticky=W + E)
+        stationManagementButton.grid(row=1, column=3, sticky=W + E, padx=40, pady = 20)
 
         #Suspend Cards Button
         suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards", command=self.adminSuspendedCardsClicked)
-        suspendedCardButton.grid(row=3, column=3, sticky=W + E)
+        suspendedCardButton.grid(row=3, column=3, sticky=W + E, padx=40, pady = 20)
 
         #Breezecard Management Button
         breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management",
                                             command=self.adminFunctionalityWindowBreezecardManagementButtonClicked)
-        breezecardManagementButton.grid(row=5, column=3, sticky=W + E)
+        breezecardManagementButton.grid(row=5, column=3, sticky=W + E, padx=40, pady = 20)
 
         #Passenger Flow Report Button
-        passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report")
-        passengerFlowReportButton.grid(row=7, column=3, sticky=W + E)
+        passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report", command=self.adminPassengerFlowClicked)
+        passengerFlowReportButton.grid(row=7, column=3, sticky=W + E, padx=40, pady = 20)
+
+
+        #logout Button
+        logoutButton = Button(adminFunctionalityWindow,
+                              text="Log Out",
+                              command=self.adminFunctionalityWindowLogOutButtonClicked)
+        logoutButton.grid(row=9, column=3, padx=40, pady = (50, 20))
+
+    # def adminFunctionalityWindowLogout(self):
+    #     adminFuctionalityW
+
+    def adminFunctionalityWindowLogOutButtonClicked(self):
+        # Click the Log Out Button on Admin Functionality Window:
+        self.loginWindow.destroy()
+        # Login Window
+        self.createLoginWindow()
+        self.buildLoginWindow(self.loginWindow)
 
 
 
@@ -748,16 +765,6 @@ class MARTA_Client:
                 duplicateCard = self.cursor.fetchone()
             self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)",
                                 (randomBreeze, oldSnake))
-            #Need to check for conflicts again??
-            #TODO: what to do with this?
-            #error: pymysql.err.IntegrityError:
-            # (1452, 'Cannot add or update a child row: a foreign key constraint fails
-            # (`cs4400_Group_54`.`Breezecard`,
-            # CONSTRAINT `Breezecard_ibfk_1`
-            # FOREIGN KEY (`cUsername`)
-            # REFERENCES `Passenger` (`pUsername`)
-            # ON DELETE SET NULL ON UPDATE CASCADE)')
-
             self.db.commit()
 
 
@@ -1065,6 +1072,62 @@ class MARTA_Client:
             self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s",
                                 (self.newOwner, selectedInformation[0]))
             self.db.commit()
+
+    #=====================Passenger FLow Report===============
+    def adminPassengerFlowClicked(self):
+        self.createPassengerFlowWindow()
+        self.buildPassengerFlowWindow(self.passengerFlowWindow)
+
+    def createPassengerFlowWindow(self):
+        self.passengerFlowWindow = Toplevel()
+        self.passengerFlowWindow.title("Passenger Flow Report")
+
+    def buildPassengerFlowWindow(self, passengerFlowWindow):
+        #Add components for the Passenger FLow Report
+        self.passengerFlowTableTreeView = ttk.Treeview(passengerFlowWindow, column=("stationName",
+                                                                                  "numPassengersIn",
+                                                                                  "numPassengersOut",
+                                                                                  "flow",
+                                                                                  "revenue"))
+        self.passengerFlowTableTreeView['show'] = 'headings'
+
+        self.passengerFlowTableTreeView.column("stationName", width=150, anchor="center")
+        self.passengerFlowTableTreeView.column("numPassengersIn", width=150, anchor="center")
+        self.passengerFlowTableTreeView.column("numPassengersOut", width=150, anchor="center")
+        self.passengerFlowTableTreeView.column("flow", width=100, anchor="center")
+        self.passengerFlowTableTreeView.column("revenue", width=100, anchor="center")
+
+        self.passengerFlowTableTreeView.heading("stationName", text="Station Name ▲")
+        self.passengerFlowTableTreeView.heading("numPassengersIn", text="# Passengers In")
+        self.passengerFlowTableTreeView.heading("numPassengersOut", text="# Passengers Out")
+        self.passengerFlowTableTreeView.heading("flow", text="Flow")
+        self.passengerFlowTableTreeView.heading("revenue", text="Revenue")
+
+        self.passengerFlowTableTreeView.grid(row=3, column=0, sticky=E, padx=10, pady=10, columnspan=7)
+        startTimeLabel = Label(passengerFlowWindow,
+                                text="Start Time")
+        startTimeLabel.grid(row=1, column=0, padx = 10, pady = 10, sticky=W)
+        endTimeLabel = Label(passengerFlowWindow,
+                              text="End Time")
+        endTimeLabel.grid(row=2, column=0, padx = 10, pady = 10, sticky=W)
+
+        startTimeEntry = Entry(passengerFlowWindow)
+        startTimeEntry.grid(row=1, column=1, sticky=W+E)
+
+        endTimeEntry = Entry(passengerFlowWindow)
+        endTimeEntry.grid(row=2, column=1, sticky=W+E)
+
+        updateButton = Button(passengerFlowWindow,
+                              text="Update")
+        resetButton = Button(passengerFlowWindow,
+                             text="Reset")
+        updateButton.grid(row=1, column=2, rowspan=2, sticky=W+E+N+S, padx = (20,10), pady = 20)
+        resetButton.grid(row=1, column=3, rowspan=2, sticky=W+E+N+S, padx = (10,20), pady = 20)
+
+
+
+
+
 
     # --------------------Database Connection-----------------
     def connect(self):
