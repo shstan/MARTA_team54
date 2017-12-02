@@ -255,7 +255,7 @@ class MARTA_Client:
         if (self.regpassword != self.regconfirmpassword):
             messagebox.showwarning("Password confirmation Error", "Password and Confirm password doesn't match.")
             return False
-     
+
         #For clicking "Use my existing Breezecard"
         if (self.radiobuttonvalue == "exist"):
             self.existBreeze = self.registrationCardNum.get()
@@ -343,11 +343,33 @@ class MARTA_Client:
 
         self.adminFunctionalityWindow.protocol("WM_DELETE_WINDOW", on_closing)
 
+    # def buildAdminFunctionalityWindow(self, adminFunctionalityWindow):
+    #     #Add component for adminFunctionalityWindow
+
+    #     #Station Management Button
+    #     stationManagementButton = Button(adminFunctionalityWindow, text="Station Management", command = self.stationManagementButtonClicked)
+    #     stationManagementButton.grid(row=1, column=3, sticky=W + E)
+
+    #     #Suspend Cards Button
+    #     suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards")
+    #     suspendedCardButton.grid(row=3, column=3, sticky=W + E)
+
+    #     #Breezecard Management Button
+    #     breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management")
+    #     breezecardManagementButton.grid(row=5, column=3, sticky=W + E)
+
+    #     #Passenger Flow Report Button
+    #     passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report")
+    #     passengerFlowReportButton.grid(row=7, column=3, sticky=W + E)
+
+
+
+        #---------------------------- ver 3.0 -------------------------------------
     def buildAdminFunctionalityWindow(self, adminFunctionalityWindow):
         #Add component for adminFunctionalityWindow
 
         #Station Management Button
-        stationManagementButton = Button(adminFunctionalityWindow, text="Station Management")
+        stationManagementButton = Button(adminFunctionalityWindow, text="Station Management",command=self.adminFunctionalityWindowStationManagementButtonClicked)
         stationManagementButton.grid(row=1, column=3, sticky=W + E)
 
         #Suspend Cards Button
@@ -355,12 +377,417 @@ class MARTA_Client:
         suspendedCardButton.grid(row=3, column=3, sticky=W + E)
 
         #Breezecard Management Button
-        breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management")
+        breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management",command = self.adminFunctionalityWindowBreezecardManagementButtonClicked)
         breezecardManagementButton.grid(row=5, column=3, sticky=W + E)
 
         #Passenger Flow Report Button
         passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report")
-        passengerFlowReportButton.grid(row=7, column=3, sticky=W + E)
+
+        #Log Out Button        passengerFlowReportButton.grid(row=7, column=3, sticky=W + E)
+
+        logOutAdminButton = Button(adminFunctionalityWindow, text="Log Out") #,command=self.adminFunctionalityWindowLogOutButtonClicked)
+        logOutAdminButton.grid(row=9, column=3, sticky=W + E)
+    #===============Administrator Functionality - Station Management=========================
+    def adminFunctionalityWindowStationManagementButtonClicked(self):
+        # Click the Station Management Button on Admin Functionality Window:
+        self.createStationManagementWindow()
+        self.buildStationManagementWindow(self.stationManagementWindow)
+
+    #Station Management Window
+    def createStationManagementWindow(self):
+        self.stationManagementWindow = Toplevel()
+        self.stationManagementWindow.title("Station Listing")
+
+
+    # def selectElement(self,event2):
+    #     curElement = self.stationListingTree.focus()
+    #     print(list(self.stationListingTree.item(curElement)['values'])
+
+
+    def buildStationManagementWindow(self, stationManagementWindow):
+        #Add component for stationManagementWindow
+        departureLabel = Label(stationManagementWindow, text = "Station Listing", font = "verdana 20 bold")
+        departureLabel.grid(row=1, column=2, sticky= W+E, padx=100,pady=20)
+
+
+        self.stationListingTree = ttk.Treeview(stationManagementWindow, column=("1", "2", "3", "4"))
+        self.stationListingTree['show'] = "headings"
+        self.stationListingTree.column("1", width = 150, anchor = "center")
+        self.stationListingTree.column("2", width = 150, anchor = "center")
+        self.stationListingTree.column("3", width = 150, anchor = "center")
+        self.stationListingTree.column("4", width = 150, anchor = "center")
+
+        self.stationListingTree.heading("1", text = "Station Name")
+        self.stationListingTree.heading("2", text = "Stop ID")
+        self.stationListingTree.heading("3", text = "Fare")
+        self.stationListingTree.heading("4", text = "Status")
+
+
+
+        self.cursor.execute("SELECT name, stopID, fare, ClosedStatus FROM Station")
+
+        self.selectstationTuple = self.cursor.fetchall()
+        self.stationNameList = []
+        self.stopIDList = []
+        self.fareList = []
+        self.statusList = []
+        self.statusListEdited = []
+        for i in self.selectstationTuple:
+            self.stationNameList.append(i[0])
+            self.stopIDList.append(i[1])
+            self.fareList.append(i[2])
+            self.statusList.append(i[3])
+
+        for i in range(len(self.statusList)):
+            if self.statusList[i] == 0:
+                self.statusListEdited.append("Closed");
+            elif self.statusList[i] == 1:
+                self.statusListEdited.append("Open");
+
+
+        # Insert data into the treeview
+        for i in range(len(self.selectstationTuple)):
+            self.stationListingTree.insert('',i,values=(self.stationNameList[i],self.stopIDList[i],self.fareList[i],self.statusListEdited[i]))
+        self.stationListingTree.grid(row=2,column=1, columnspan=4, padx=20, pady=20)
+
+
+
+
+        #Create Create New Station Button
+        createNewStationButton = Button(stationManagementWindow, text="Create New Station",command = self.stationManagementWindowCreateNewStationButtonClicked)
+        createNewStationButton.grid(row=4, column=1, sticky=W)
+
+        #Create View Station Button
+        viewStationButton = Button(stationManagementWindow, text="View Station",command = self.stationManagementWindowViewStationButtonClicked)
+        viewStationButton.grid(row=4, column=4, sticky=E)
+
+
+    def stationManagementWindowCreateNewStationButtonClicked(self):
+        # Click the Create New Station Button on Station Management Window:
+        self.createCreateNewStationWindow()
+        self.buildCreateNewStationWindow(self.createNewStationWindow)
+
+        #self.loginWindow.withdraw()
+
+    #=============New User Registration Window==============
+    def createCreateNewStationWindow(self):
+        self.createNewStationWindow = Toplevel()
+        self.createNewStationWindow.title("Create New Station")
+
+
+        #---------------------------------------------------------
+    def buildCreateNewStationWindow(self, createNewStationWindow):
+        #Add component for Create New Station Window
+        top_title = Label(createNewStationWindow, text = "Create Station", font = "verdana 10 bold")
+        top_title.grid(column=2, sticky= W+E, padx = (0, 95))
+        #Station Name Label
+        stationNameLabel = Label(createNewStationWindow, text="Station Name")
+        stationNameLabel.grid(row=1, column=1, sticky=W, pady=(10,5))
+
+        #StopID Label
+        stopIDLabel = Label(createNewStationWindow, text="Stop ID")
+        stopIDLabel.grid(row=3, column=1, sticky=W, pady = 5)
+
+        #Entry Fare Label
+        entryFareLabel = Label(createNewStationWindow, text="Entry Fare")
+        entryFareLabel.grid(row=5, column=1, sticky=W,pady = 5)
+
+        #Station Type Label
+        stationTypeLabel = Label(createNewStationWindow, text="Station Type")
+        stationTypeLabel.grid(row=7, column=1, sticky=W,pady = 5)
+
+        # nearestIntersection = Label(createNewStationWindow, text="Nearest Intersection")
+        # nearestIntersection.grid(row=7, column=2, sticky=W)
+
+        self.typeSelected = StringVar()
+        self.typeSelected.set("bus")
+        r1 = Radiobutton(createNewStationWindow, text="Bus Station", variable=self.typeSelected, value="bus")
+        r1.grid(row=6, column=2, sticky=W)
+        self.registerNearInt = StringVar()
+        nearSEctionEntry = Entry(createNewStationWindow, textvariable=self.registerNearInt, width=20)
+        nearSEctionEntry.grid(row=7, column=2, sticky=W)
+        r2 = Radiobutton(createNewStationWindow, text="Train Station", variable=self.typeSelected, value="train")
+        r2.grid(row=8, column=2, sticky=W)
+
+
+        #Description of Open Station Label
+        # descriptionOpenStationLabel = Label(createNewStationWindow,text="When checked, passengers can enter at this station.")
+        # descriptionOpenStationLabel.grid(row=11,column=1, sticky = W)
+        self.var1 = IntVar()
+        self.var1.set(1)
+        c1 = Checkbutton(createNewStationWindow, text="Open Station", variable=self.var1, onvalue=1, offvalue=0).grid(row=9, column=1, sticky=W)
+
+         # Username Entry
+        self.registrationStationName = StringVar()
+        stationNameEntry = Entry(createNewStationWindow, textvariable=self.registrationStationName, width=25)
+        stationNameEntry.grid(row=1, column=2, sticky = W,pady=(10,5))
+
+        # Email Address Entry
+        self.registrationStopID = StringVar()
+        stopIDEntry = Entry(createNewStationWindow, textvariable=self.registrationStopID,width=25)
+        stopIDEntry.grid(row=3, column=2, sticky= W , pady = 5)
+
+        # Password Entry
+        self.registrationFare = StringVar()
+        self.registrationFare.set("$")
+        fareEntry = Entry(createNewStationWindow, textvariable=self.registrationFare,width=25)
+        fareEntry.grid(row=5, column=2, sticky =W, pady = 5)
+
+
+
+
+        #Create Create Station Button
+        createStationButton = Button(createNewStationWindow, text="Create Station", command=self.createNewStationWindowCreateStationButtonClicked)
+        createStationButton.grid(row=12, column=2, padx=(100,0), sticky=E)
+
+
+    def createNewStationWindowCreateStationButtonClicked(self):
+        # Click the Create Station Button on Create New Station Window:
+        def isfloat(value):
+            try:
+                float(value)
+                return True
+            except ValueError:
+                return False
+        #Clock the button on create new station Window
+        self.regStationName = self.registrationStationName.get()
+        self.regStopID = self.registrationStopID.get()
+        self.regFare = self.registrationFare.get()
+        if self.regFare[0] == '$':
+            self.regFare = self.regFare[1:]
+        self.regNearInt = self.registerNearInt.get()
+        self.regType = self.typeSelected.get()
+        self.checkboxVar = self.var1.get()
+        print (self.checkboxVar)
+
+        # Error message for station input empty
+        if not self.regStationName:
+            messagebox.showwarning("Station Name input is empty", "Please enter registering station name.")
+            return False
+        #Error message for stop id input empty
+        if not self.regStopID:
+            messagebox.showwarning("Stop ID input is empty", "Please enter registering Stop ID.")
+            return False
+        #Error message for fare input empty
+        if not self.regFare:
+            messagebox.showwarning("Station Fare input is empty", "Please enter valid station fare.")
+            return False
+        # Error message that input is not float value
+        if not isfloat(self.regFare):
+              messagebox.showwarning("Station Fare input is empty", "Please enter valid station fare.")
+              return False
+        else:
+            isFare = (float(self.regFare) <= 50 and float(self.regFare) >= 0)
+
+        # print (isFare)
+        # Error message that input is not bween 0.00 and 50.00
+        if not isFare:
+            messagebox.showwarning("Fare input is not correct","Fare to enter must be between $0.00 and $50.00 \nPlease enter valid station fare.")
+            return False
+
+
+        if self.regType == "bus":
+            if not self.regNearInt:
+               messagebox.showwarning("Nearest Intersection input is empty", "Please enter valid input.")
+               return False
+
+        #Error message for username input already exist in db
+        isStation = self.cursor.execute("SELECT * FROM Station WHERE name = %s", self.regStationName)
+        if isStation:
+            messagebox.showwarning("Station Name already exist", "The station name you entered already exist. \n Try different station.")
+            return False
+
+        #Error message for email input already exist in db
+        isStopID = self.cursor.execute("SELECT * FROM Station WHERE stopID = %s", self.regStopID)
+        if isStopID:
+            messagebox.showwarning("stopID already exist", "The stopID you entered already exist. \n Try different stopID.")
+            return False
+
+        if (self.regType == "bus"):
+            self.cursor.execute("INSERT INTO Station(stopID, name, IsTrain, fare, ClosedStatus) VALUES(%s, %s, False, %s, %s)", (self.regStopID, self.regStationName, self.regFare, self.checkboxVar))
+            self.cursor.execute("INSERT INTO Bus(busID, nearestIntersection) VALUES(%s,%s)", (self.regStopID, self.regNearInt))
+            messagebox.showwarning("Registration Success", "bus station has successfully registered to database.")
+            self.createNewStationWindow.destroy()
+            self.db.commit()
+            self.buildStationManagementWindow(self.stationManagementWindow)
+            return True
+        elif (self.regType == "train"):
+            self.cursor.execute("INSERT INTO Station(stopID, name, IsTrain, fare, ClosedStatus) VALUES(%s, %s, True, %s, %s)", (self.regStopID, self.regStationName, self.regFare, self.checkboxVar))
+            messagebox.showwarning("Registration Success", "train station has successfully registered to database.")
+            self.createNewStationWindow.destroy()
+            self.db.commit()
+            self.buildStationManagementWindow(self.stationManagementWindow)
+            return True
+
+    #------------------------- view station -------------------------------
+
+    def stationManagementWindowViewStationButtonClicked(self):
+        # Click the View Station Button on Station Management Window:
+        curItem = self.stationListingTree.selection()
+        if not self.stationListingTree.selection():
+            messagebox.showwarning("Nothing Selected", "Please select an entry in the table!")
+            return False
+        self.createViewStationWindow(curItem)
+        self.buildViewStationWindow(self.viewStationWindow, curItem)
+
+    #Create View Station Window
+    def createViewStationWindow(self, curItem):
+        selectedStation = self.stationListingTree.item(curItem)['values'][0]
+        self.viewStationWindow = Toplevel()
+        self.viewStationWindow.title("Station Detail - %s" % selectedStation)#####STRING OF STATION NAME
+
+    def buildViewStationWindow(self, viewStationWindow, curItem):
+        #Add component for View Station Window
+        #Station Detail Name Label
+        def change_case(event=None):
+            self.updateFareClicked(self.selectedFare)
+
+        def red_text(event=None):
+            updatefareLabel.config(fg="red")
+
+        def black_text(event=None):
+            updatefareLabel.config(fg="blue")
+
+
+
+        self.selectedStation = self.stationListingTree.item(curItem)['values'][0]
+        self.selectedStopID = self.stationListingTree.item(curItem)['values'][1]
+        self.selectedFare = self.stationListingTree.item(curItem)['values'][2]
+        self.selectedStatus = self.stationListingTree.item(curItem)['values'][3]
+        if self.selectedStatus == "Open":
+            statusBin = 1;
+        elif self.selectedStatus == "Closed":
+            statusBin = 0;
+        print ("selected status: " + str(self.selectedStatus))
+
+        stationDetailNameLabel = Label(viewStationWindow,text=self.selectedStation, font = "Verdana 12 bold") #####STRING OF STATION NAME
+        stationDetailNameLabel.grid(row=2,column=1,sticky=W) #####STRING OF STATION NAME
+
+
+        #Station Detail StopID Label
+        stationDetailStopIDLabel = Label(viewStationWindow,text="Stop %s" % self.selectedStopID, fg = "red", font = "Verdana 8 bold") #####STRING OF STATION STOP ID
+        stationDetailStopIDLabel.grid(row=2,column=10,sticky=E) #####STRING OF STATION STOP ID
+
+        #Fare Label
+        fareLabel = Label(viewStationWindow,text="Fare")
+        fareLabel.grid(row=3,column=1,sticky=W)
+
+        self.newFare = StringVar()
+        self.newFare.set("$%s" % self.selectedFare)
+        fareEntry2 = Entry(viewStationWindow, textvariable=self.newFare, width=30)
+        fareEntry2.grid(row=3, column=2, sticky =W, pady = 5)
+
+        updatefareLabel = Label(viewStationWindow, text="Update Fare", fg= "blue", font = "time 8 underline")
+        updatefareLabel.bind("<Button-1>",change_case)
+        updatefareLabel.bind("<Enter>",red_text)
+        updatefareLabel.bind("<Leave>",black_text)
+
+        updatefareLabel.grid(row=3,column=3, sticky=W)
+
+
+        #Nearest Intersection in Station Detail Label
+        nearestIntersectionStationDetailLabel = Label(viewStationWindow, text="Nearest\n  Intersection")
+        nearestIntersectionStationDetailLabel.grid(row=5,column=1,sticky=W)
+
+        ###INSERT MESSAGE "Not available for train stations" If Train CODE
+        self.isTrainType();
+        if (self.selectedType == 1):
+            descriptionLabel = Label(viewStationWindow, text="Not available for train stations", font = "Verdana 7 bold")
+            descriptionLabel.grid(row=5,column=2,sticky=W, padx=(0,150))
+        elif (self.selectedType == 0):
+            self.newNearIntSect = StringVar()
+            self.cursor.execute("SELECT nearestIntersection FROM Bus WHERE busID = %s", self.selectedStopID)
+            self.selectedIntSect = self.cursor.fetchone()
+            self.selectedIntSect = self.selectedIntSect[0]
+            self.newNearIntSect.set(self.selectedIntSect)
+            print (self.selectedIntSect)
+            stopIDEntry = Entry(viewStationWindow, textvariable=self.newNearIntSect,width=30)
+            stopIDEntry.grid(row=5, column=2, sticky= W , padx=(0,150))
+
+
+
+
+
+
+        #Open Station in Station Detail Label
+        self.var2 = IntVar()
+        self.var2.set(statusBin)
+        c1 = Checkbutton(viewStationWindow, text="Open Station", variable=self.var2, onvalue=1, offvalue=0).grid(row=9, column=1, sticky=W)
+
+
+        #Description of Open Station in Station Detail Label
+        descriptionOpenStationStationDetailLabel = Label(viewStationWindow,text="When checked, passengers can enter at this station.")
+        descriptionOpenStationStationDetailLabel.grid(row=10,column=1,sticky=W)
+
+    # def change_case(event=None):
+    #     def isfloat(value):
+    #         try:
+    #             float(value)
+    #             return True
+    #         except ValueError:
+    #             return False
+    #     print ("in def")
+    #     inputFare = self.newFare.get()
+    #     if inputFare[0] == '$':
+    #         inputFare = inputFare[1:]
+    #     if not inputFare:
+    #         messagebox.showwarning("Station Fare input is empty", "Please enter valid station fare.")
+    #         return False
+    #     if not isfloat(self.inputFare):
+    #         messagebox.showwarning("Station Fare input is empty", "Please enter valid station fare.")
+    #     else:
+    #         isFare = (float(self.inputFare) <= 50 and float(self.inputFare) >= 0)
+    #     # Error message that input is not bween 0.00 and 50.00
+    #     if not isFare:
+    #         messagebox.showwarning("Fare input is not correct","Fare to enter must be between $0.00 and $50.00 \nPlease enter valid station fare.")
+    #         return False
+    def isTrainType(self):
+        self.cursor.execute("SELECT IsTrain FROM Station WHERE stopID = %s", self.selectedStopID)
+        self.selectedType = self.cursor.fetchone()
+        self.selectedType =self.selectedType[0]
+        print ("%s station is :" % self.selectedStation + str(self.selectedType))
+
+        return True
+
+    def updateFareClicked(self, selectedFare):
+        def isfloat(value):
+            try:
+                float(value)
+                return True
+            except ValueError:
+                return False
+        print (self.newFare.get())
+        inputFare = self.newFare.get()
+        oldFare = self.selectedFare
+        print (oldFare)
+
+        if not inputFare:
+            messagebox.showwarning("Station Fare input is empty", "Please enter valid station fare.")
+            return False
+        if inputFare[0] == '$':
+            inputFare = inputFare[1:]
+        if not isfloat(inputFare):
+            messagebox.showwarning("Input is not float value", "Please enter valid fare value.")
+            return False
+        else:
+            isFare = (float(inputFare) <= 50 and float(inputFare) >= 0)
+        # Error message that input is not bween 0.00 and 50.00
+        if float(oldFare) == float(inputFare):
+            messagebox.showwarning("Nothing Has Changed", "Nothing has changed.\nPlease enter desire fare.")
+            return False
+
+        self.cursor.execute("UPDATE Station SET fare = %s WHERE StopID = %s",  (inputFare, self.selectedStopID))
+        self.db.commit()
+        messagebox.showwarning("Change Successfully", "Fare information has been updated for %s" % self.selectedStation)
+        return True
+
+    def adminFunctionalityWindowBreezecardManagementButtonClicked(self):
+        self.createBreezecardMangementWindow()
+        self.buildcreateBreezecardMangementWindow(self,createNewStationWindow)
+
+    def createBreezecardMangementWindow(self):
+        self.stationManagementWindow = Toplevel()
+        self.stationManagementWindow.title("Breeze Card Management")
 
 
     # --------------------Database Connection-----------------
