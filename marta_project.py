@@ -8,9 +8,123 @@ import decimal
 import hashlib
 from hashlib import md5
 from random import *
+import tkinter as tk
 
 #MARTA v1.3
 #By Team 54, CS4400 2017 Fall
+class DateEntry(tk.Frame):
+    def __init__(self, master, frame_look={},**look):
+        args = dict(relief=tk.SUNKEN, border=1)
+        args.update(frame_look)
+        tk.Frame.__init__(self, master, **args)
+
+        args = {'relief': tk.FLAT}
+        args.update(look)
+
+        self.entry_1 = tk.Entry(self, width=4, **args)
+        self.label_1 = tk.Label(self, text='-', **args)
+        self.entry_2 = tk.Entry(self, width=2, **args)
+        self.label_2 = tk.Label(self, text='-', **args)
+        self.entry_3 = tk.Entry(self, width=2, **args)
+        self.label_3 = tk.Label(self, text=' ', **args)
+        self.entry_4 = tk.Entry(self, width=2, **args)
+        self.label_4 = tk.Label(self, text=':', **args)
+        self.entry_5 = tk.Entry(self, width=2, **args)
+        self.label_5 = tk.Label(self, text=':', **args)
+        self.entry_6 = tk.Entry(self, width=2, **args)
+
+        self.entry_1.pack(side=tk.LEFT)
+        self.label_1.pack(side=tk.LEFT)
+        self.entry_2.pack(side=tk.LEFT)
+        self.label_2.pack(side=tk.LEFT)
+        self.entry_3.pack(side=tk.LEFT)
+        self.label_3.pack(side=tk.LEFT)
+        self.entry_4.pack(side=tk.LEFT)
+        self.label_4.pack(side=tk.LEFT)
+        self.entry_5.pack(side=tk.LEFT)
+        self.label_5.pack(side=tk.LEFT)
+        self.entry_6.pack(side=tk.LEFT)
+
+        self.entry_1.bind('<KeyRelease>', self._e1_check)
+        self.entry_2.bind('<KeyRelease>', self._e2_check)
+        self.entry_3.bind('<KeyRelease>', self._e3_check)
+        self.entry_4.bind('<KeyRelease>', self._e4_check)
+        self.entry_5.bind('<KeyRelease>', self._e5_check)
+        self.entry_6.bind('<KeyRelease>', self._e5_check)
+
+
+    def _backspace(self, entry):
+        cont = entry.get()
+        entry.delete(0, tk.END)
+        entry.insert(0, cont[:-1])
+
+    def _e1_check(self, e):
+        cont = self.entry_1.get()
+        if len(cont) >= 4:
+            self.entry_2.focus()
+        if len(cont) > 4 or not cont[-1].isdigit():
+            self._backspace(self.entry_1)
+            self.entry_1.focus()
+
+    def _e2_check(self, e):
+        cont = self.entry_2.get()
+        if len(cont) >= 2:
+            self.entry_3.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_2)
+            self.entry_2.focus()
+
+    def _e3_check(self, e):
+        cont = self.entry_3.get()
+        if len(cont) >= 2:
+            self.entry_4.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_3)
+            self.entry_3.focus()
+
+    def _e4_check(self, e):
+        cont = self.entry_4.get()
+        if len(cont) >= 2:
+            self.entry_5.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_4)
+            self.entry_4.focus()
+
+    def _e5_check(self, e):
+        cont = self.entry_5.get()
+        if len(cont) >= 2:
+            self.entry_6.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_5)
+            self.entry_5.focus()
+
+    def _e6_check(self, e):
+        cont = self.entry_6.get()
+        if len(cont) >= 2:
+            self.entry_6.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_6)
+            self.entry_6.focus()
+
+
+    def get(self):
+        print(type(self.entry_1.get()))
+
+        return self.entry_1.get()\
+               +'-'\
+               +self.entry_2.get()\
+               +'-'\
+               +self.entry_3.get()\
+               +' '\
+               +self.entry_4.get()\
+               +':'\
+               +self.entry_5.get() \
+               +':'\
+               +self.entry_6.get()
+
+
+
+
 class MARTA_Client:
     def __init__(self):
         # Invoke createLoginWindow; Invoke buildLoginWindow, Set loginWindow as mainloop
@@ -777,15 +891,17 @@ class MARTA_Client:
         startTimeLabel.grid(row=1, column=1, sticky=W)
 
         self.entryStartTime = StringVar()
-        startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=40)
-        startTimeEntry.grid(row=1, column=2, sticky=W)
+        # startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=40)
+        self.startTimeEntry = DateEntry(viewTripHistoryWindow, border=0)
+        self.startTimeEntry.grid(row=1, column=2, sticky=W)
 
         endTimeLabel = Label(viewTripHistoryWindow, text="End Time: ")
         endTimeLabel.grid(row=2, column=1, sticky=W)
 
         self.entryEndTime = StringVar()
-        endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=40)
-        endTimeEntry.grid(row=2, column=2, sticky=W)
+        # endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=40)
+        self.endTimeEntry = DateEntry(viewTripHistoryWindow, border=0)
+        self.endTimeEntry.grid(row=2, column=2, sticky=W)
 
         updateButton = Button(viewTripHistoryWindow, text="Update", command=self.viewTripHistoryUpdateClicked)
         updateButton.grid(row=2, column=3, sticky=W)
@@ -840,8 +956,9 @@ class MARTA_Client:
         pass
 
     def viewTripHistoryUpdateClicked(self):
-        startTime = self.entryStartTime.get()
-        endTime = self.entryEndTime.get()
+        startTime = self.startTimeEntry.get()
+        print(startTime)
+        endTime = self.endTimeEntry.get()
 
         #If only startTime was input
         if not startTime:
@@ -1435,3 +1552,6 @@ class MARTA_Client:
             return False
 a = MARTA_Client()
 a.db.close()
+
+
+
