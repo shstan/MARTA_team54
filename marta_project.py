@@ -153,6 +153,9 @@ class MARTA_Client:
     def buildNewUserRegistrationWindow(self,newUserRegistrationWindow):
         # Add components for newUserRegistrationWindow
 
+        top_title = Label(newUserRegistrationWindow, text = "User Registration", font = "verdana 10 bold")
+        top_title.grid(column=2, sticky= W+E, padx = (0, 95))
+
         # Username Label
         usernameLabel = Label(newUserRegistrationWindow, text="Username")
         usernameLabel.grid(row=2, column=2, sticky=W)
@@ -191,24 +194,71 @@ class MARTA_Client:
         regconfirmPasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationConfirmPassword,show = '*',width=25)
         regconfirmPasswordEntry.grid(row=5, column=3, padx=1)
 
-        self.var = StringVar()
-        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=self.var, value="exist")
-        r1.grid(row=6, column=1, sticky=W)
-        breezebox = Label(newUserRegistrationWindow, text="Card Number")
+        breezebox = Label(self.newUserRegistrationWindow, text="Card Number")
         breezebox.grid(row=7, column=1, sticky=E)
         self.registrationCardNum = StringVar()
-        breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
-        breezeboxEntry.grid(row=7, column=2, padx=1)
-
-        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value="new")
-        r2.grid(row=8, column=1, sticky=W)
-
+        # self.var = StringVar()
+        # self.var.set("new")
+        self.var = StringVar()
         self.var.set("new")
+        self.breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=25,state = 'disabled')
+        self.breezeboxEntry.grid(row=7, column=2, padx=(0,50))
+
+        list_option = [
+        ("Option 1", "exist"),
+        ("Option 2", "new")
+        ]
+        for ops, val in list_option:
+            if val == "exist":
+                print ("inside")
+                r1 = Radiobutton(newUserRegistrationWindow, text=ops, variable=self.var, value=val, command=self.radioButtonChanging)
+                r1.grid(row=6, column=1, sticky=W)
+            if val == "new":
+                print ("inside")
+                r2 = Radiobutton(newUserRegistrationWindow, text=ops, variable=self.var, value=val, command=self.radioButtonChanging)
+                r2.grid(row=8, column=1, sticky=W)
+
+        # r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=self.var, value="exist")
+        # r1.grid(row=6, column=1, sticky=W)
+
+        # r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value="new")
+        # r2.grid(row=8, column=1, sticky=W)
+
+
+        # self.breezeboxDisabled(self.var.get())
 
         # Create Button
         newRegisterButton = Button(newUserRegistrationWindow, text="Register", command=self.newRegistrationWindowButtonClicked)
         newRegisterButton.grid(row=8, column=4, sticky=E)
 
+
+    # def breezeboxDisabled(self, var):
+    #     print ("self var value: "+ str(self.var.get()))
+        # breezebox = Label(self.newUserRegistrationWindow, text="Card Number")
+        # breezebox.grid(row=7, column=1, sticky=E)
+        # self.registrationCardNum = StringVar()
+    #     if (str(self.var.get()) == "new"):
+    #         breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20,  state='disabled')
+    #         breezeboxEntry.grid(row=7, column=2, padx=1)
+    #         return False
+    #     elif (str(self.var.get()) == "exist"):
+    #         breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
+    #         breezeboxEntry.grid(row=7, column=2, padx=1)
+    #         return True
+    def radioButtonChanging(self):
+        print ("You selected the option " + str(self.var.get()))
+        # self.var.set(value)
+        if str(self.var.get()) == "exist":
+            print (str(self.var.get()) + " : in if statement")
+            self.breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=25)
+            self.breezeboxEntry.grid(row=7, column=2, padx=(0,50))
+            return False
+        elif str(self.var.get()) == "new":
+            print (str(self.var.get()) + " : in elif statement")
+            self.breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=25,state = 'disabled')
+            self.breezeboxEntry.grid(row=7, column=2, padx=(0,50))
+            return True
+            # disableBox(self.breezeboxEntry)
 
     def newRegistrationWindowButtonClicked(self):
         #Clock the button on Register Window
@@ -899,7 +949,9 @@ class MARTA_Client:
             self.cursor.execute("DROP VIEW TripHistory")
 
         self.loginWindow.destroy()
-
+        self.createLoginWindow()
+        self.buildLoginWindow(self.loginWindow)
+        self.loginWindow.mainloop()
 
     #=============Administrator Functionality Window========================
     def createAdminFunctionalityWindow(self):
@@ -1133,8 +1185,12 @@ class MARTA_Client:
         self.regType = self.typeSelected.get()
         self.checkboxVar = self.var1.get()
         print (self.checkboxVar)
+        if(self.regType == "bus"):
+            regTypeBin = 0;
+        elif(self.regType == "train"):
+            regTypeBin = 1;
 
-        # Error message for station input empty
+        # Error message for station & type combination input empty
         if not self.regStationName:
             messagebox.showwarning("Station Name input is empty", "Please enter registering station name.")
             return False
@@ -1160,16 +1216,22 @@ class MARTA_Client:
             return False
 
 
+
+
+
         if self.regType == "bus":
             if not self.regNearInt:
                messagebox.showwarning("Nearest Intersection input is empty", "Please enter valid input.")
                return False
 
-        #Error message for username input already exist in db
-        isStation = self.cursor.execute("SELECT * FROM Station WHERE name = %s", self.regStationName)
+        #Error message for station name & type input already exist in db
+        isStation = self.cursor.execute("SELECT * FROM Station WHERE name = %s AND IsTrain = %s", (self.regStationName, regTypeBin))
         if isStation:
-            messagebox.showwarning("Station Name already exist", "The station name you entered already exist. \n Try different station.")
-            return False
+            if self.regType == "bus":
+                messagebox.showwarning("Bus Stop Name already exist", "The Bus stop name you entered already exist. \n Try different station.")
+                return False
+            elif self.regType == "train":
+                messagebox.showwarning("Train Station Name already exist", "The Train station name you entered already exist. \n Try different station.")
 
         #Error message for email input already exist in db
         isStopID = self.cursor.execute("SELECT * FROM Station WHERE stopID = %s", self.regStopID)
@@ -1192,6 +1254,8 @@ class MARTA_Client:
             self.db.commit()
             self.buildStationManagementWindow(self.stationManagementWindow)
             return True
+
+
 
     #------------------------- view station -------------------------------
 
@@ -1353,6 +1417,7 @@ class MARTA_Client:
         self.cursor.execute("UPDATE Station SET fare = %s WHERE StopID = %s",  (inputFare, self.selectedStopID))
         self.db.commit()
         messagebox.showwarning("Change Successfully", "Fare information has been updated for %s" % self.selectedStation)
+        self.buildStationManagementWindow(self.stationManagementWindow)
         return True
 
     def adminFunctionalityWindowBreezecardManagementButtonClicked(self):
