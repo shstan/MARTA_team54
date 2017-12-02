@@ -966,11 +966,11 @@ class MARTA_Client:
 
         #Breeze Cards Label
         breezecardsLabel = Label(breezecardManagementWindow,text="Breeze Cards") ###BOLD IT
-        breezecardsLabel.grid(row=1,column=1,sticky=W)
+        breezecardsLabel.grid(row=1,column=1,sticky=W + E)
 
         #Search/Filter Label
         searchFilterLabel = Label(breezecardManagementWindow,text="Search/Filter") #####STRING OF STATION STOP ID
-        searchFilterLabel.grid(row=3,column=1,sticky=W)
+        searchFilterLabel.grid(row=3,column=1, pady = 10, sticky=W)
 
         #Owner Label
         ownerLabel = Label(breezecardManagementWindow,text="Owner")
@@ -1043,13 +1043,21 @@ class MARTA_Client:
         self.owners = []
         self.cardNumValueOwnerTreeIndex = 0
         for breezecardInfo in self.breezecardInfoTuple:
+            #make owner as suspended if the card is in suspended status
+            #####IDK HOW TO MAKE SUSPENDED BOLD
+            isSuspended = self.cursor.execute("SELECT * FROM Conflict WHERE conCardNum = %s", breezecardInfo[0])
+            ownerName = breezecardInfo[2]
+            if not isSuspended:
+                ownerName = ownerName
+            else:
+                ownerName = "Suspended"
             self.card_nums.append(breezecardInfo[0])
             self.values.append(breezecardInfo[1])
             self.owners.append(breezecardInfo[2])
-            self.cardNumValueOwnerTree.insert('',self.cardNumValueOwnerTreeIndex,values = breezecardInfo)
+            self.cardNumValueOwnerTree.insert('',self.cardNumValueOwnerTreeIndex,values = (breezecardInfo[0], breezecardInfo[1], ownerName))
             self.cardNumValueOwnerTreeIndex+=1
 
-        self.cardNumValueOwnerTree.grid(row=10,column=1,padx=20,pady=(10,10))
+        self.cardNumValueOwnerTree.grid(row=10,column=1, columnspan = 5, padx=20,pady=(10,10))
         self.cardNumValueOwnerTree.bind("<ButtonRelease-1>",self.selectElement)
 
         #Set Value of Selected Card Button
@@ -1065,7 +1073,6 @@ class MARTA_Client:
         setValueOfSelectedCardEntry = Entry(breezecardManagementWindow, textvariable=self.setValueOfSelectedCard,width = 10)
         setValueOfSelectedCardEntry.grid(row=15,column=1,sticky = W)
 
-
         #Transfer Selected Card Entry
         self.transferSelectedCard = StringVar()
         transferSelectedCardEntry = Entry(breezecardManagementWindow, textvariable=self.transferSelectedCard,width = 10)
@@ -1078,62 +1085,37 @@ class MARTA_Client:
     def breezecardManagementWindowUpdateFilterButtonClicked(self):
         #Click the Update Filter Button  on Breezecard Management Window:
         #Obtain the owner, card number, start and end values
-        self.ownerFilter = self.owner.get()
-        print(type(self.ownerFilter))
-        print(self.ownerFilter)
-        self.card_numFilter = self.card_num.get()
-        self.startValueFilter = self.startValue.get()
-        self.endValueFilter = self.endValue.get()
+        ownerFilter = self.owner.get()
+        card_numFilter = self.card_num.get()
+        startValueFilter = self.startValue.get()
+        endValueFilter = self.endValue.get()
+        suspendedFilter = self.showSuspendedCards.get() # 0 not selected, 1 selected
+        #Update based on owner, card number, suspended status, or value range
+        #self.card_nums -> list of all cards
 
-        #Check to see if digit
-        if self.card_numFilter.isdigit()==0:
-            messagebox.showwarning("Invalid Value.","The value should be a number.")
-            return False
+        #INPUT ERROR
+        #Error if card number is invalid (not 16-digit)
+        #Error if card number is invalid (not digit)
+        #Error if value input is invalid (not digit)
+        #Error if value input exceeds 1000.00
 
-        #Check to see if digit        
-        if self.startValueFilter.isdigit()==0:
-            messagebox.showwarning("Invalid Value.","The value should be a number.")
-            return False
+        if not ownerFilter:
+            ownerFilter = "%s" % (self.owners,)
+        if not card_numFilter:
+            card_numFilter = "%s" % (self.card_nums,)
+        if not startValueFilter:
+            startValueFilter = 0
+        if not endValueFilter:
+            endValueFilter = 1000.00
 
-        #Check to see if digit
-        if self.endValueFilter.isdigit()==0:
-            messagebox.showwarning("Invalid Value.","The value should be a number.")
-            return False
+        #ownerFilter = (ownerFilter,)
+        print(ownerFilter)
+        #if (suspendedFilter == 0):
+            #self.cursor.execute("DROP VIEW ManageBreezecard")
+            #self.cursor.execute("CREATE VIEW ManageBreezecard AS (SELECT * FROM Breezecard WHERE ")
 
-        #Error message for card number input doesn't exist in db
-        isCard_num = self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s",self.card_numFilter)
-        if not self.ownerFilter and not self.card_numFilter and not self.startValueFilter and not self.endValueFilter and not isCard_num:
-            messagebox.showwarning("Card Number does not exist in the Database.","Try again using an existing Card Number.")
-            return False
 
-        #Error message for owner input doesn't exist in db   
-        self.cursor.execute("SELECT username FROM Breezecard WHERE cUsername = %s",self.ownerFilter)
-        isOwner = self.cursor.fetchone()[0]
-        if not isOwner:
-            messagebox.showwarning("Owner does not exist in the Database.","Try again using an existing Owner.")
-            return False
-        #Error message for value input < 0  
-        if float(self.startValueFilter) < 0.00:
-            messagebox.showwarning("Value cannot be less than 0.","Please put a value greater than 0 but less than 1000.")
-            return False
-        #Error message for value input > 1000
-        if float(self.startValueFilter) > 1000.00:
-            messagebox.showwarning("Value cannot be greater than 1000.","Please put a value less than 1000 but greater than 0.")
-            return False
-        #Error message for value input < 0  
-        if float(self.endValueFilter) < 0.00:
-            messagebox.showwarning("Value cannot be less than 0.","Please put a value greater than 0 but less than 1000.")
-            return False
-        #Error message for value input > 1000
-        if float(self.endValueFilter) > 1000.00:
-            messagebox.showwarning("Value cannot be greater than 1000.","Please put a value less than 1000 but greater than 0.")
-            return False
-
-        #if not self.ownerFilter and not card_numFilter and not self.startValueFilter and not self.showSuspendedCards.get() == 1
-
-        else:
-            pass
-            #self.cursor.execute("SELECT cardNum, value, cUsername WHERE cardNum = %s AND (value >= %s AND value <= %s) AND cUsername = %s",(self.card_numFilter,self.startValueFilter,self.endValueFilter,self.ownerFilter))
+            #self.cursor.execute("CREATE VIEW ManageBreezecard AS (SELECT * FROM Breezecard)")
 
     def selectElement(self,event2):
         curElement = self.cardNumValueOwnerTree.focus()
