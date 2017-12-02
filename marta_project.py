@@ -943,10 +943,7 @@ class MARTA_Client:
         #Station Management Button
 
         stationManagementButton = Button(adminFunctionalityWindow, text="Station Management",command=self.adminFunctionalityWindowStationManagementButtonClicked)
-        stationManagementButton.grid(row=1, column=3, sticky=W + E)
-
-        stationManagementButton = Button(adminFunctionalityWindow, text="Station Management")
-        stationManagementButton.grid(row=1, column=3, padx = 20, pady = 10, sticky=W + E)
+        stationManagementButton.grid(row=1, column=3, pady = 10, sticky=W + E)
 
 
         #Suspend Cards Button
@@ -954,17 +951,16 @@ class MARTA_Client:
         suspendedCardButton.grid(row=3, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Breezecard Management Button
-
         breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management",command = self.adminFunctionalityWindowBreezecardManagementButtonClicked)
-        breezecardManagementButton.grid(row=5, column=3, sticky=W + E)
+        breezecardManagementButton.grid(row=5, column=3,  pady = 10,sticky=W + E)
 
         #Passenger Flow Report Button
         passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report")
-
+        passengerFlowReportButton.grid(row=7, column=3, pady = 10,sticky=W+E)
         #Log Out Button        passengerFlowReportButton.grid(row=7, column=3, sticky=W + E)
 
         logOutAdminButton = Button(adminFunctionalityWindow, text="Log Out") #,command=self.adminFunctionalityWindowLogOutButtonClicked)
-        logOutAdminButton.grid(row=9, column=3, sticky=W + E)
+        logOutAdminButton.grid(row=9, column=3,  pady = 10,sticky=W + E)
     #===============Administrator Functionality - Station Management=========================
     def adminFunctionalityWindowStationManagementButtonClicked(self):
         # Click the Station Management Button on Admin Functionality Window:
