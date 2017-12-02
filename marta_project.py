@@ -941,20 +941,20 @@ class MARTA_Client:
         #Add component for adminFunctionalityWindow
 
         #Station Management Button
-<<<<<<< HEAD
+
         stationManagementButton = Button(adminFunctionalityWindow, text="Station Management",command=self.adminFunctionalityWindowStationManagementButtonClicked)
         stationManagementButton.grid(row=1, column=3, sticky=W + E)
-=======
+
         stationManagementButton = Button(adminFunctionalityWindow, text="Station Management")
         stationManagementButton.grid(row=1, column=3, padx = 20, pady = 10, sticky=W + E)
->>>>>>> cddc2e942a67c7fa9447906ffb3b709a68ed9707
+
 
         #Suspend Cards Button
         suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards")
         suspendedCardButton.grid(row=3, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Breezecard Management Button
-<<<<<<< HEAD
+
         breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management",command = self.adminFunctionalityWindowBreezecardManagementButtonClicked)
         breezecardManagementButton.grid(row=5, column=3, sticky=W + E)
 
@@ -1366,7 +1366,7 @@ class MARTA_Client:
     def createBreezecardMangementWindow(self):
         self.stationManagementWindow = Toplevel()
         self.stationManagementWindow.title("Breeze Card Management")
-=======
+
         breezecardManagementButton = Button(adminFunctionalityWindow, text="Breezecard Management", command=self.adminFunctionalityWindowBreezecardManagementButtonClicked)
         breezecardManagementButton.grid(row=5, column=3, padx = 20, pady = 10, sticky=W + E)
 
@@ -1613,7 +1613,6 @@ class MARTA_Client:
         else:
             self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s", (self.newOwner, selectedInformation[0]))
             self.db.commit()
->>>>>>> cddc2e942a67c7fa9447906ffb3b709a68ed9707
 
 
     # --------------------Database Connection-----------------
