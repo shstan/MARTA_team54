@@ -699,7 +699,7 @@ class MARTA_Client:
         self.selectedBreezecard.set("")
 
         self.manageCardsTree.grid(row=1, column=0, rowspan=8, padx = 20, pady = (10,10))
-        self.manageCardsTree.bind("<ButtonRelease-1>", self.selectItem)
+        self.manageCardsTree.bind("<ButtonRelease-1>", self.selectItem_managecards)
 
         #Adding Breezecard Entry
         self.entryBreezeCard = StringVar()
@@ -746,7 +746,7 @@ class MARTA_Client:
 
 ####IMPLEMENT REMOVE CARD
 
-    def selectItem(self, event):
+    def selectItem_managecards(self, event):
         # for selection debugging
         selectedItem = self.manageCardsTree.focus()
         selectedItem = list(self.manageCardsTree.item(selectedItem)['values'])[0]
@@ -1502,18 +1502,19 @@ class MARTA_Client:
                                                                                   "revenue"))
         self.passengerFlowTableTreeView['show'] = 'headings'
 
-        self.passengerFlowTableTreeView.column("stationName", width=150, anchor="center")
-        self.passengerFlowTableTreeView.column("numPassengersIn", width=150, anchor="center")
-        self.passengerFlowTableTreeView.column("numPassengersOut", width=150, anchor="center")
-        self.passengerFlowTableTreeView.column("flow", width=100, anchor="center")
-        self.passengerFlowTableTreeView.column("revenue", width=100, anchor="center")
+        self.passengerFlowTableTreeView.column("stationName", width=180, anchor="center")
+        self.passengerFlowTableTreeView.column("numPassengersIn", width=130, anchor="center")
+        self.passengerFlowTableTreeView.column("numPassengersOut", width=130, anchor="center")
+        self.passengerFlowTableTreeView.column("flow", width=70, anchor="center")
+        self.passengerFlowTableTreeView.column("revenue", width=70, anchor="center")
 
-        self.passengerFlowTableTreeView.heading("stationName", text="Station Name ▲")
+        self.passengerFlowTableTreeView.heading("stationName", text="Station Name ⇕")
         self.passengerFlowTableTreeView.heading("numPassengersIn", text="# Passengers In")
         self.passengerFlowTableTreeView.heading("numPassengersOut", text="# Passengers Out")
         self.passengerFlowTableTreeView.heading("flow", text="Flow")
-        self.passengerFlowTableTreeView.heading("revenue", text="Revenue")
+        self.passengerFlowTableTreeView.heading("revenue", text="Revenue ($)")
 
+        self.passengerFlowTableTreeView.bind("<ButtonRelease-1>", self.selectItem_PassengerFlowTable)
         self.passengerFlowTableTreeView.grid(row=3, column=0, sticky=E, padx=10, pady=10, columnspan=7)
         startTimeLabel = Label(passengerFlowWindow,
                                 text="Start Time")
@@ -1535,7 +1536,118 @@ class MARTA_Client:
         updateButton.grid(row=1, column=2, rowspan=2, sticky=W+E+N+S, padx = (20,10), pady = 20)
         resetButton.grid(row=1, column=3, rowspan=2, sticky=W+E+N+S, padx = (10,20), pady = 20)
 
+        # edited and changed
+        self.passFlowStartTime = StringVar()
+        startTimeEntry = Entry(passengerFlowWindow, textvariable=self.passFlowStartTime)
+        startTimeEntry.grid(row=1, column=1, sticky=W + E)
 
+        self.passFlowEndTime = StringVar()
+        endTimeEntry = Entry(passengerFlowWindow, textvariable=self.passFlowEndTime)
+        endTimeEntry.grid(row=2, column=1, sticky=W + E)
+
+        updateButton = Button(passengerFlowWindow,
+                              text="Update", command=self.passengerFlowReportUpdateButtonClicked)
+        resetButton = Button(passengerFlowWindow,
+                             text="Reset", command=self.passengerFlowReportResetClicked)
+        updateButton.grid(row=1, column=2, rowspan=2, sticky=W + E + N + S, padx=(20, 10), pady=20)
+        resetButton.grid(row=1, column=3, rowspan=2, sticky=W + E + N + S, padx=(10, 20), pady=20)
+
+    def passengerFlowReportResetClicked(self):
+        for i in self.passengerFlowTableTreeView.get_children():
+            self.passengerFlowTableTreeView.delete(i)
+
+    def passengerFlowReportUpdateButtonClicked(self):
+        for i in self.passengerFlowTableTreeView.get_children():
+            self.passengerFlowTableTreeView.delete(i)
+        self.up_FlowTableOrder = True
+        self.passengerFlowTableTreeView.heading('#1', text='Station Name ⇕')
+        self.s1 = self.passFlowStartTime.get()
+        self.s2 = self.passFlowEndTime.get()
+        if (self.s2==''):
+            self.s2 = '9999-12-31 23:59'
+
+        # Station Names and # in each station = Passenger In
+        self.cursor.execute(
+            "SELECT name,SUM(currentFare),COUNT(*) FROM Trip LEFT OUTER JOIN Station ON Trip.startID = Station.stopID WHERE startTime >= %s AND startTime <= %s GROUP BY Trip.startID ORDER BY name",
+            (self.s1, self.s2))
+        passIn = self.cursor.fetchall()
+        self.dictionaryPassIn = {}
+        flowIn = 0
+        for pIn in passIn:
+            sName = pIn[0]
+            self.dictionaryPassIn[sName] = (pIn[1], pIn[2])
+            flowIn = flowIn + pIn[2]
+        print(self.dictionaryPassIn)
+        print(passIn)
+
+        # Station Names and # in each station = Passenger Out
+        self.cursor.execute(
+            "SELECT name,SUM(currentFare),COUNT(*) FROM Trip LEFT OUTER JOIN Station ON Trip.endID = Station.stopID WHERE startTime >= %s AND startTime <= %s GROUP BY Trip.endID ORDER BY name",
+            (self.s1, self.s2))
+        passOut = self.cursor.fetchall()
+        self.dictionaryPassOut = {}
+        for pOut in passOut:
+            sName = pOut[0]
+            self.dictionaryPassOut[sName] = (pOut[1], pOut[2])
+        print(self.dictionaryPassOut)
+        print(type(passIn))
+
+        print("passin: ", self.dictionaryPassIn)
+        print("pass out: ", self.dictionaryPassOut)
+
+        revenueDict = {}
+        for k in self.dictionaryPassIn.keys():
+            inRev = 0
+            outRev = 0
+            if (self.dictionaryPassIn.get(k)):
+                inRev = self.dictionaryPassIn[k][0]
+            if (self.dictionaryPassOut.get(k)):
+                outRev = self.dictionaryPassOut[k][0]
+            revenueDict[k] = inRev - outRev
+        for k in self.dictionaryPassOut.keys():
+            inRev = 0
+            outRev = 0
+            if (self.dictionaryPassIn.get(k)):
+                inRev = self.dictionaryPassIn[k][0]
+            if (self.dictionaryPassOut.get(k)):
+                outRev = self.dictionaryPassOut[k][0]
+            revenueDict[k] = inRev - outRev
+        print(revenueDict)
+        flow_index = 0
+        self.passengerFlowValueTupleList = []
+        for k in revenueDict.keys():
+            passinNum = 0
+            if (self.dictionaryPassIn.get(k)):
+                passinNum = self.dictionaryPassIn[k][1]
+            passoutNum = 0
+            if (self.dictionaryPassOut.get(k)):
+                passoutNum = self.dictionaryPassOut[k][1]
+            self.passengerFlowTableTreeView.insert('', flow_index, values=(k, passinNum, passoutNum, passinNum - passoutNum, revenueDict[k]))
+            self.passengerFlowValueTupleList.insert(flow_index,(k, passinNum, passoutNum, passinNum - passoutNum, revenueDict[k]))
+            flow_index+=1
+        # self.passengerFlowTableTreeView.
+
+
+    def selectItem_PassengerFlowTable(self, event):
+        # toggle order, and change headers to indicate order.
+        region = self.passengerFlowTableTreeView.identify("region", event.x, event.y)
+        if region == "heading":
+            if (self.passengerFlowTableTreeView.identify_column(event.x) == '#1'):
+                self.sortPassengerFlowTree(self.up_FlowTableOrder)
+                self.up_FlowTableOrder = not self.up_FlowTableOrder
+
+    def sortPassengerFlowTree(self, inorder):
+        for i in self.passengerFlowTableTreeView.get_children():
+            self.passengerFlowTableTreeView.delete(i)
+        self.passengerFlowValueTupleList = sorted(self.passengerFlowValueTupleList, key=lambda x: x[0], reverse = not inorder)
+        j = 0
+        for e in self.passengerFlowValueTupleList:
+            self.passengerFlowTableTreeView.insert('', j, values=e)
+            j+=1
+        if (inorder):
+            self.passengerFlowTableTreeView.heading('#1', text='Station Name ▲')
+        else:
+            self.passengerFlowTableTreeView.heading('#1', text='Station Name ▼')
 
 
 
