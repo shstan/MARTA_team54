@@ -305,23 +305,65 @@ class MARTA_Client:
         regconfirmPasswordEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationConfirmPassword,show = '*',width=25)
         regconfirmPasswordEntry.grid(row=5, column=3, padx=1)
 
-        self.var = StringVar()
-        r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=self.var, value="exist")
-        r1.grid(row=6, column=1, sticky=W)
-        breezebox = Label(newUserRegistrationWindow, text="Card Number")
+
+        breezebox = Label(self.newUserRegistrationWindow, text="Card Number")
         breezebox.grid(row=7, column=1, sticky=E)
         self.registrationCardNum = StringVar()
-        breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
-        breezeboxEntry.grid(row=7, column=2, padx=1)
 
-        r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value="new")
-        r2.grid(row=8, column=1, sticky=W)
-
+        self.var = StringVar()
         self.var.set("new")
+        self.breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=25,state = 'disabled')
+        self.breezeboxEntry.grid(row=7, column=2, padx=(0,50))
+
+        list_option = [
+        ("Option 1: Exist", "exist"),
+        ("Option 2: New", "new")
+        ]
+        for ops, val in list_option:
+            if val == "exist":
+                print ("inside")
+                r1 = Radiobutton(newUserRegistrationWindow, text=ops, variable=self.var, value=val, command=self.radioButtonChanging)
+                r1.grid(row=6, column=1, sticky=W)
+            if val == "new":
+                print ("inside")
+                r2 = Radiobutton(newUserRegistrationWindow, text=ops, variable=self.var, value=val, command=self.radioButtonChanging)
+                r2.grid(row=8, column=1, sticky=W)
+        self.var.set("new")
+
+
+        # self.var = StringVar()
+        # r1 = Radiobutton(newUserRegistrationWindow, text="Option 1", variable=self.var, value="exist")
+        # r1.grid(row=6, column=1, sticky=W)
+        # breezebox = Label(newUserRegistrationWindow, text="Card Number")
+        # breezebox.grid(row=7, column=1, sticky=E)
+        # self.registrationCardNum = StringVar()
+        # breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
+        # breezeboxEntry.grid(row=7, column=2, padx=1)
+
+        # r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value="new")
+        # r2.grid(row=8, column=1, sticky=W)
+
+        # self.var.set("new")
 
         # Create Button
         newRegisterButton = Button(newUserRegistrationWindow, text="Register", command=self.newRegistrationWindowButtonClicked)
         newRegisterButton.grid(row=8, column=4, sticky=E)
+
+
+    def radioButtonChanging(self):
+        print ("You selected the option " + str(self.var.get()))
+        # self.var.set(value)
+        if str(self.var.get()) == "exist":
+            # print (str(self.var.get()) + " : in if statement")
+            self.breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=25)
+            self.breezeboxEntry.grid(row=7, column=2, padx=(0,50))
+            return False
+        elif str(self.var.get()) == "new":
+            # print (str(self.var.get()) + " : in elif statement")
+            self.breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=25,state = 'disabled')
+            self.breezeboxEntry.grid(row=7, column=2, padx=(0,50))
+            return True
+
 
 
     def newRegistrationWindowButtonClicked(self):
@@ -372,7 +414,7 @@ class MARTA_Client:
         if (self.regpassword != self.regconfirmpassword):
             messagebox.showwarning("Password confirmation Error", "Password and Confirm password doesn't match.")
             return False
-     
+
         #For clicking "Use my existing Breezecard"
         if (self.radiobuttonvalue == "exist"):
             self.existBreeze = self.registrationCardNum.get()
@@ -583,7 +625,7 @@ class MARTA_Client:
         menu = self.endsAtDropDown['menu']
         menu.delete(0, 'end')
         for updatedEnd in updatedEndList:
-            menu.add_command(label=updatedEnd, command=lambda endingstation=updatedEnd: self.endsAtDropVar.set(endingstation))       
+            menu.add_command(label=updatedEnd, command=lambda endingstation=updatedEnd: self.endsAtDropVar.set(endingstation))
 
     def toggle_startbutton(self):
         #Press Start Trip
@@ -660,7 +702,7 @@ class MARTA_Client:
             self.cursor.execute("UPDATE Trip SET endID = %s WHERE (endID IS NULL) AND (bcNum IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s))", (willendID, self.passusername))
             self.db.commit()
             messagebox.showwarning("Trip Success", "You have arrived to your destiny. \n Thank you for using MARTA")
-            return True      
+            return True
 
     ##===========================================Passenger Functionality - Manage Cards==================================================
     def passengerManageCardButtonClicked(self):
@@ -1020,7 +1062,7 @@ class MARTA_Client:
         # Click the Log Out Button on Passenger Functionality Window:
         if (self.viewTripHistoryExist):
             self.cursor.execute("DROP VIEW TripHistory")
-        
+
         self.loginWindow.destroy()
 
 
@@ -1506,7 +1548,7 @@ class MARTA_Client:
 
     def selectElement(self,event2):
         curElement = self.cardNumValueOwnerTree.focus()
-            
+
     def breezecardManagementWindowSetValueOfSelectedCardButtonClicked(self):
         #Click the Set Value of Selected Card Button  on Breezecard Management Window:
         curElement = self.cardNumValueOwnerTree.selection()
@@ -1519,7 +1561,7 @@ class MARTA_Client:
             return False
 
         #Error: value invalid (didn't put number)
-        if not newValue: 
+        if not newValue:
             messagebox.showwarning("Invalid Value","Please input value you want to add to this card")
             return False
 
@@ -1534,7 +1576,7 @@ class MARTA_Client:
         if ((newValue + oldValue) > 1000.00):
             messagebox.showwarning("Breeze Card cannot exceed $1000.00.","Please enter a lower value.")
             return False
-        
+
         finalValue = oldValue + newValue
         self.cursor.execute("UPDATE Breezecard SET value = %s WHERE cardNum = %s",(finalValue,selectedInformation[0]))
         self.db.commit()
@@ -1551,7 +1593,7 @@ class MARTA_Client:
         if not self.cardNumValueOwnerTree.selection():
             messagebox.showwarning("Nothing was selected", "Please select an entry from the table.")
             return False
-        
+
         previousOwner = selectedInformation[2]
         #Error: If owner input empty
         if not self.newOwner:
@@ -1570,7 +1612,7 @@ class MARTA_Client:
         if (isOwnerAdmin == 1):
             messagebox.showwarning("Transfer Invalid", "You cannot give a card to an administrator.")
             return False
-        
+
         selectedBreeze = str(selectedInformation[0])
         if (len(selectedBreeze) != 16):
             selectedBreeze = "0" + selectedBreeze
@@ -1620,6 +1662,12 @@ class MARTA_Client:
         departureLabel.grid(row=1, column=2, sticky= W+E, padx=100,pady=20)
 
 
+        #### this is the indicator for sorting
+        self.station_name_asc = True
+        self.station_stopID = True
+        self.station_fare = True
+        self.station_status = True
+
         self.stationListingTree = ttk.Treeview(stationManagementWindow, column=("1", "2", "3", "4"))
         self.stationListingTree['show'] = "headings"
         self.stationListingTree.column("1", width = 250, anchor = "center")
@@ -1627,11 +1675,11 @@ class MARTA_Client:
         self.stationListingTree.column("3", width = 150, anchor = "center")
         self.stationListingTree.column("4", width = 150, anchor = "center")
 
-        self.stationListingTree.heading("1", text = "Station Name")
-        self.stationListingTree.heading("2", text = "Stop ID")
-        self.stationListingTree.heading("3", text = "Fare")
-        self.stationListingTree.heading("4", text = "Status")
-
+        self.stationListingTree.heading("#1", text = "Station Name ▲▼")
+        self.stationListingTree.heading("#2", text = "Stop ID ▲▼")
+        self.stationListingTree.heading("#3", text = "Fare ▲▼")
+        self.stationListingTree.heading("#4", text = "Status ▲▼")
+        self.stationListingTree.bind("<ButtonRelease-1>", self.selectItem_stationListing)
 
 
         self.cursor.execute("SELECT name, stopID, fare, ClosedStatus FROM Station")
@@ -1675,8 +1723,81 @@ class MARTA_Client:
         # Click the Create New Station Button on Station Management Window:
         self.createCreateNewStationWindow()
         self.buildCreateNewStationWindow(self.createNewStationWindow)
-
         #self.loginWindow.withdraw()
+
+    def selectItem_stationListing(self, event):
+        # for selection debugging
+        region = self.stationListingTree.identify("region", event.x, event.y)
+        if region == "heading":
+            print("You clicked:", region, event.x, event.y)
+            print(self.stationListingTree.identify_column(event.x),
+                  type(self.stationListingTree.identify_column(event.x)))
+            if (self.stationListingTree.identify_column(event.x) == '#1'):
+                self.station_name_asc = not self.station_name_asc
+
+                self.sortStationListingByTupleIndex(self.station_name_asc, 0)
+                if (self.station_name_asc):
+                    self.stationListingTree.heading('#1', text='Station Name # ▲')
+                else:
+                    self.stationListingTree.heading('#1', text='Station Name # ▼')
+            elif (self.stationListingTree.identify_column(event.x) == '#2'):
+                self.station_stopID = not self.station_stopID
+
+                self.sortStationListingByTupleIndex(self.station_stopID, 1)
+                if (self.station_stopID):
+                    self.stationListingTree.heading('#2', text='Stop ID ▲')
+                else:
+                    self.stationListingTree.heading('#2', text='Stop ID ▼')
+            elif (self.stationListingTree.identify_column(event.x) == '#3'):
+                self.station_fare = not self.station_fare
+                self.sortStationListingByTupleIndex(self.station_fare, 2)
+                if (self.station_fare):
+                    self.stationListingTree.heading('#3', text='Fare ▲')
+                else:
+                    self.stationListingTree.heading('#3', text='Fare ▼')
+            elif (self.stationListingTree.identify_column(event.x) == '#4'):
+                self.station_status = not self.station_status
+                self.sortStationListingByTupleIndex(self.station_status, 3)
+                if (self.station_status):
+                    self.stationListingTree.heading('#4', text='Status ▲')
+                else:
+                    self.stationListingTree.heading('#4', text='Status ▼')
+
+        curItem = self.stationListingTree.focus()
+        print(list(self.stationListingTree.item(curItem)['values']))
+        # print("selection: ", self.suspendedCardsTree.selection())
+
+    def sortStationListingByTupleIndex(self, asc, ind):
+        for i in self.stationListingTree.get_children():
+            self.stationListingTree.delete(i)
+            if ind == 0 or ind == 1:
+                self.selectstationTuple = sorted(self.selectstationTuple, key=lambda x: x[ind].lower(), reverse = not asc)
+            elif ind == 2 or ind == 3:
+                self.selectstationTuple = sorted(self.selectstationTuple, key=lambda x: x[ind], reverse = not asc)
+
+            self.stationNameList = []
+            self.stopIDList = []
+            self.fareList = []
+            self.statusList = []
+            self.statusListEdited = []
+
+        ### ??
+        for i in self.selectstationTuple:
+            self.stationNameList.append(i[0])
+            self.stopIDList.append(i[1])
+            self.fareList.append(i[2])
+            self.statusList.append(i[3])
+
+        for i in range(len(self.statusList)):
+            if self.statusList[i] == 0:
+                self.statusListEdited.append("Closed");
+            elif self.statusList[i] == 1:
+                self.statusListEdited.append("Open");
+
+        for i in range(len(self.selectstationTuple)):
+            self.stationListingTree.insert('',i,values=(self.stationNameList[i],self.stopIDList[i],self.fareList[i],self.statusListEdited[i]))
+        self.stationListingTree.grid(row=2,column=1, columnspan=4, padx=20, pady=20)
+
 
     #=============New Station Window==============
     def createCreateNewStationWindow(self):
