@@ -8,9 +8,122 @@ import decimal
 import hashlib
 from hashlib import md5
 from random import *
+import tkinter as tk
 
 #MARTA v1.3
 #By Team 54, CS4400 2017 Fall
+class DateEntry(tk.Frame):
+    def __init__(self, master, frame_look={},**look):
+        args = dict(relief=tk.SUNKEN, border=1)
+        args.update(frame_look)
+        tk.Frame.__init__(self, master, **args)
+
+        args = {'relief': tk.FLAT}
+        args.update(look)
+
+        self.entry_1 = tk.Entry(self, width=4, **args)
+        self.label_1 = tk.Label(self, text='-', **args)
+        self.entry_2 = tk.Entry(self, width=2, **args)
+        self.label_2 = tk.Label(self, text='-', **args)
+        self.entry_3 = tk.Entry(self, width=2, **args)
+        self.label_3 = tk.Label(self, text=' ', **args)
+        self.entry_4 = tk.Entry(self, width=2, **args)
+        self.label_4 = tk.Label(self, text=':', **args)
+        self.entry_5 = tk.Entry(self, width=2, **args)
+        self.label_5 = tk.Label(self, text=':', **args)
+        self.entry_6 = tk.Entry(self, width=2, **args)
+
+        self.entry_1.pack(side=tk.LEFT)
+        self.label_1.pack(side=tk.LEFT)
+        self.entry_2.pack(side=tk.LEFT)
+        self.label_2.pack(side=tk.LEFT)
+        self.entry_3.pack(side=tk.LEFT)
+        self.label_3.pack(side=tk.LEFT)
+        self.entry_4.pack(side=tk.LEFT)
+        self.label_4.pack(side=tk.LEFT)
+        self.entry_5.pack(side=tk.LEFT)
+        self.label_5.pack(side=tk.LEFT)
+        self.entry_6.pack(side=tk.LEFT)
+
+        self.entry_1.bind('<KeyRelease>', self._e1_check)
+        self.entry_2.bind('<KeyRelease>', self._e2_check)
+        self.entry_3.bind('<KeyRelease>', self._e3_check)
+        self.entry_4.bind('<KeyRelease>', self._e4_check)
+        self.entry_5.bind('<KeyRelease>', self._e5_check)
+        self.entry_6.bind('<KeyRelease>', self._e5_check)
+
+
+    def _backspace(self, entry):
+        cont = entry.get()
+        entry.delete(0, tk.END)
+        entry.insert(0, cont[:-1])
+
+    def _e1_check(self, e):
+        cont = self.entry_1.get()
+        if len(cont) >= 4:
+            self.entry_2.focus()
+        if len(cont) > 4 or not cont[-1].isdigit():
+            self._backspace(self.entry_1)
+            self.entry_1.focus()
+
+    def _e2_check(self, e):
+        cont = self.entry_2.get()
+        if len(cont) >= 2:
+            self.entry_3.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_2)
+            self.entry_2.focus()
+
+    def _e3_check(self, e):
+        cont = self.entry_3.get()
+        if len(cont) >= 2:
+            self.entry_4.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_3)
+            self.entry_3.focus()
+
+    def _e4_check(self, e):
+        cont = self.entry_4.get()
+        if len(cont) >= 2:
+            self.entry_5.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_4)
+            self.entry_4.focus()
+
+    def _e5_check(self, e):
+        cont = self.entry_5.get()
+        if len(cont) >= 2:
+            self.entry_6.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_5)
+            self.entry_5.focus()
+
+    def _e6_check(self, e):
+        cont = self.entry_6.get()
+        if len(cont) >= 2:
+            self.entry_6.focus()
+        if len(cont) > 2 or not cont[-1].isdigit():
+            self._backspace(self.entry_6)
+            self.entry_6.focus()
+
+
+    def get(self):
+        print(type(self.entry_1.get()))
+
+        return self.entry_1.get()\
+               +'-'\
+               +self.entry_2.get()\
+               +'-'\
+               +self.entry_3.get()\
+               +' '\
+               +self.entry_4.get()\
+               +':'\
+               +self.entry_5.get() \
+               +':'\
+               +self.entry_6.get()
+
+
+#              MARTA CLIENT SERVER
 class MARTA_Client:
     def __init__(self):
         # Invoke createLoginWindow; Invoke buildLoginWindow, Set loginWindow as mainloop
@@ -41,6 +154,7 @@ class MARTA_Client:
 
         self.viewTripHistoryExist = False
         self.manageBreezecardExist = False
+        self.passengerFlowReportExist = False
 
     def buildLoginWindow(self, loginWindow):
         # Add component for Login Window
@@ -456,8 +570,6 @@ class MARTA_Client:
         self.endsAtButton = Button(passengerFunctionalityWindow, text="End Trip", command=self.toggle_endbutton)
         self.endsAtButton.grid(row=5, column=3, sticky=W+E)
 
-        ##MANAGE CARDS LINK
-        ##END TRIP LINK
     def displayBalance(self, cardNum):
         #DisplayBalance depends on Dropdown menu
         self.cursor.execute("SELECT value FROM Breezecard WHERE cardNum = %s", cardNum)
@@ -485,7 +597,7 @@ class MARTA_Client:
             messagebox.showwarning("Cannot start trip", "You don't have enough balance on your Breezecard.")
             return False
 
-        #Error: Buzzcard is suspended
+        #Error: Breezecard is suspended
         self.cursor.execute("SELECT * FROM Conflict WHERE conCardNum = %s", breezecardUsed)
         constraintBuzzcard = self.cursor.fetchall()
         if constraintBuzzcard:
@@ -601,7 +713,7 @@ class MARTA_Client:
         self.selectedBreezecard.set("")
 
         self.manageCardsTree.grid(row=1, column=0, rowspan=8, padx = 20, pady = (10,10))
-        self.manageCardsTree.bind("<ButtonRelease-1>", self.selectItem)
+        self.manageCardsTree.bind("<ButtonRelease-1>", self.selectBreezecardItem)
 
         #Adding Breezecard Entry
         self.entryBreezeCard = StringVar()
@@ -648,7 +760,7 @@ class MARTA_Client:
 
 ####IMPLEMENT REMOVE CARD
 
-    def selectItem(self, event):
+    def selectBreezecardItem(self, event):
         # for selection debugging
         selectedItem = self.manageCardsTree.focus()
         selectedItem = list(self.manageCardsTree.item(selectedItem)['values'])[0]
@@ -789,7 +901,7 @@ class MARTA_Client:
 
     def dropview(self):
         self.cursor.execute("DROP VIEW TripHistory")
-        self.viewTripHistoryExist = 0
+        self.viewTripHistoryExist = False
         self.viewTripHistoryWindow.withdraw()
 
     def buildViewTripHistoryWindow(self, viewTripHistoryWindow):
@@ -886,7 +998,7 @@ class MARTA_Client:
             try:
                 endDateFormat = datetime.strptime(endTime, "%Y-%m-%d %H:%M:%S")
             except:
-                messagebox.showwarning("Input invalid", "The Start Time input is invalid.")
+                messagebox.showwarning("Input invalid", "The End Time input is invalid.")
                 return False
 
         self.cursor.execute("DROP VIEW TripHistory")
@@ -923,6 +1035,8 @@ class MARTA_Client:
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             if (self.manageBreezecardExist):
                 self.cursor.execute("DROP VIEW ManageBreezecard")
+            if (self.passengerFlowReportExist):
+                self.cursor.execute("DROP VIEW PassengerFlowReport")
             self.loginWindow.destroy()
 
     def buildAdminFunctionalityWindow(self, adminFunctionalityWindow):
@@ -934,7 +1048,7 @@ class MARTA_Client:
         stationManagementButton.grid(row=1, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Suspend Cards Button
-        suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards")
+        suspendedCardButton = Button(adminFunctionalityWindow, text="Suspended Cards", command=self.adminSuspendedCardsClicked)
         suspendedCardButton.grid(row=3, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Breezecard Management Button
@@ -942,7 +1056,7 @@ class MARTA_Client:
         breezecardManagementButton.grid(row=5, column=3, padx = 20, pady = 10, sticky=W + E)
 
         #Passenger Flow Report Button
-        passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report")
+        passengerFlowReportButton = Button(adminFunctionalityWindow, text="Passenger Flow Report", command=self.adminPassengerFlowClicked)
         passengerFlowReportButton.grid(row=7, column=3, padx = 20, pady = 10, sticky=W + E)
 
         logoutButton = Button(adminFunctionalityWindow, text = "Log Out", command=self.admin_logout)
@@ -953,6 +1067,222 @@ class MARTA_Client:
             self.cursor.execute("DROP VIEW ManageBreezecard")
 
         self.loginWindow.destroy()
+
+    #=================Admin Suspended Card Window======================================
+    def adminSuspendedCardsClicked(self):
+        self.createAdminSuspendedCardsWindow()
+        self.buildAdminSuspendedCardsWindow(self.adminSuspendedCardsWindow)
+
+    def createAdminSuspendedCardsWindow(self):
+        self.adminSuspendedCardsWindow = Toplevel()
+        # self.adminSuspendedCardsWindow.event_delete()
+        self.adminSuspendedCardsWindow.title("Suspended Cards")
+
+    def buildAdminSuspendedCardsWindow(self, adminSuspendedCardsWindow):
+        self.suspended_card_num_asc = True
+        self.suspended_date_asc = True
+        self.sort_mode = {}
+        self.sort_mode['cardnum_asc'] = "ORDER BY conCardNum ASC;"
+        self.sort_mode['cardnum_desc'] = "ORDER BY conCardNum DESC;"
+        self.sort_mode['date_asc'] = "ORDER BY dateTime ASC;"
+        self.sort_mode['date_desc'] = "ORDER BY dateTime DESC;"
+        self.current_suspended_card_sort = self.sort_mode['cardnum_asc']
+        print(self.sort_mode['cardnum_asc'])
+
+
+        self.suspendedCardsTree = ttk.Treeview(adminSuspendedCardsWindow, column=("cardNum", "newOwner", "dateSuspended", "prevOwner"))
+        self.suspendedCardsTree['show'] = 'headings'
+        self.suspendedCardsTree.column("cardNum", width=150, anchor="center")
+        self.suspendedCardsTree.column("newOwner", width=70, anchor="center")
+        self.suspendedCardsTree.column("dateSuspended", width=140, anchor="center")
+        self.suspendedCardsTree.column("prevOwner", width=120, anchor="center")
+
+        self.suspendedCardsTree.heading("cardNum", text="Card # ▲")
+        self.suspendedCardsTree.heading("newOwner", text="New Owner")
+        self.suspendedCardsTree.heading("dateSuspended", text="Date Suspended ▲▼")
+        self.suspendedCardsTree.heading("prevOwner", text="Previous Owner")
+
+        self.cursor.execute("SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner "
+                            "FROM Conflict "
+                            "INNER JOIN Breezecard ON ( conCardNum = cardNum ) "
+                            + self.current_suspended_card_sort)
+        self.suspendedCardsTuple = self.cursor.fetchall()
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex+=1
+
+        # for i in range(len(self.suspendedCardsTuple)):
+        self.suspendedCardsTree.grid(row=1, column=1, padx = 20, pady = (10, 10), sticky=W+E+N+S )
+        self.suspendedCardsTree.bind("<ButtonRelease-1>", self.selectItem)
+        assignToNewUserButton = Button(adminSuspendedCardsWindow,
+                                       text="Assign Selected Card to New Owner",
+                                       command=self.assignToNewUserButtonClicked)
+        assignToNewUserButton.grid(row=2, column=1, padx = 20, pady = (0, 10))
+        assignToPreviousOwnerButton = Button(adminSuspendedCardsWindow,
+                                             text="Assign Selected Card to Previous Owner",
+                                             command=self.assignToPreviousUserButtonClicked)
+        assignToPreviousOwnerButton.grid(row=3, column=1, padx = 20, pady = 20)
+
+
+        adminSuspendedCardsNote = Label(adminSuspendedCardsWindow, text="Assigning the card to an owner will unblock"
+                                                                        " all accounts conflicted on the same BreezeCard")
+        adminSuspendedCardsNote.grid(row=4, column = 1, padx = 20, pady = 20)
+        print("selection: ", self.suspendedCardsTree.selection())
+
+        self.suspendedCardsTree.selection()
+
+    def assignToNewUserButtonClicked(self):
+        curItem = self.suspendedCardsTree.selection()
+
+        # for j in self.suspendedCardsTree.item(curItem)['values']:
+        #     print(j)
+
+        if not self.suspendedCardsTree.selection():
+            messagebox.showwarning("Nothing Selected", "Please select an entry in the table!")
+            return False
+        print("self.suspendedCardsTree.item(curItem)['values'][0]) =",
+              self.suspendedCardsTree.item(curItem)['values'][0])
+        oldSnake = self.suspendedCardsTree.item(curItem)['values'][3]
+
+        selectedInfo = self.suspendedCardsTree.item(curItem)['values']
+
+        self.cursor.execute("UPDATE Breezecard\n"
+                            "SET cUsername = %s\n"
+                            "WHERE cardNum = %s;", (selectedInfo[1], selectedInfo[0]))
+        self.cursor.execute("DELETE FROM Conflict\n"
+                                "WHERE conCardNum = %s;", selectedInfo[0])
+        self.db.commit()
+        for i in self.suspendedCardsTree.get_children():
+            self.suspendedCardsTree.delete(i)
+        self.cursor.execute(
+            "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner "
+            "FROM Conflict "
+            "INNER JOIN Breezecard ON ( conCardNum = cardNum ) "
+            + self.current_suspended_card_sort)
+        self.suspendedCardsTree.heading('#1', text='Card # ▲')
+        self.suspendedCardsTree.heading('#3', text='Date Suspended ▲▼')
+
+        self.suspendedCardsTuple = self.cursor.fetchall()
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex += 1
+        self.cursor.execute("SELECT cardNum FROM Breezecard WHERE cUsername = %s", oldSnake)
+        hasCard = self.cursor.fetchone()
+        print("hasCard", hasCard)
+        print("oldSnake", oldSnake)
+        if not hasCard:
+            randomBreeze = str(randint(0, 9)) + str(randint(100000000000000, 999999999999999))
+            self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s", randomBreeze)
+            duplicateCard = self.cursor.fetchone()
+            while duplicateCard:
+                randomBreeze = str(randint(0, 9)) + str(randint(100000000000000, 999999999999999))
+                self.cursor.execute("SELECT * FROM Breezecard WHERE cardNum = %s", randomBreeze)
+                duplicateCard = self.cursor.fetchone()
+            self.cursor.execute("INSERT INTO Breezecard(cardNum, value, cUsername) VALUES(%s, 0.00, %s)",
+                                (randomBreeze, oldSnake))
+            self.db.commit()
+
+    def assignToPreviousUserButtonClicked(self):
+        curItem = self.suspendedCardsTree.selection()
+
+        # for j in self.suspendedCardsTree.item(curItem)['values']:
+        #     print(j)
+
+        if not self.suspendedCardsTree.selection():
+            messagebox.showwarning("Nothing Selected", "Please select an entry in the table!")
+            return False
+        print("self.suspendedCardsTree.item(curItem)['values'][0]) =",
+              self.suspendedCardsTree.item(curItem)['values'][0])
+
+        selectedInfo = self.suspendedCardsTree.item(curItem)['values']
+
+        self.cursor.execute("DELETE FROM Conflict\n"
+                            "WHERE conCardNum = %s;", selectedInfo[0])
+        self.db.commit()
+        for i in self.suspendedCardsTree.get_children():
+            self.suspendedCardsTree.delete(i)
+        self.cursor.execute(
+            "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner "
+            "FROM Conflict "
+            + self.current_suspended_card_sort)
+        self.suspendedCardsTuple = self.cursor.fetchall()
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex += 1
+
+
+###DATE SORTING NOT WORK
+    def selectItem(self, event):
+        # for selection debugging
+        region = self.suspendedCardsTree.identify("region", event.x, event.y)
+        if region == "heading":
+            print("You clicked:", region, event.x, event.y)
+            print(self.suspendedCardsTree.identify_column(event.x),
+                  type(self.suspendedCardsTree.identify_column(event.x)))
+            if (self.suspendedCardsTree.identify_column(event.x) == '#1'):
+                self.suspended_card_num_asc = not self.suspended_card_num_asc
+                self.sortSuspendedCardsByTupleIndex(self.suspended_card_num_asc , 1)
+                if (self.suspended_card_num_asc):
+                    self.suspendedCardsTree.heading('#1', text='Card # ▲')
+                else:
+                    self.suspendedCardsTree.heading('#1', text='Card # ▼')
+                self.suspendedCardsTree.heading('#3', text='Date Suspended ▲▼')
+            elif (self.suspendedCardsTree.identify_column(event.x) == '#3'):
+                self.sortSuspendedCardsByTupleIndex(self.suspended_date_asc, 3)
+                if (self.suspended_date_asc):
+                    self.suspendedCardsTree.heading('#3', text='Date Suspended ▼')
+                else:
+                    self.suspendedCardsTree.heading('#3', text='Date Suspended ▲')
+                self.suspended_date_asc = not self.suspended_date_asc
+                self.suspendedCardsTree.heading('#1', text='Card # ▲▼')
+
+        curItem = self.suspendedCardsTree.focus()
+        print(list(self.suspendedCardsTree.item(curItem)['values']))
+        # print("selection: ", self.suspendedCardsTree.selection())
+
+    def sortSuspendedCardsByTupleIndex(self, asc, ind):
+        for i in self.suspendedCardsTree.get_children():
+            self.suspendedCardsTree.delete(i)
+        self.suspendedCardsTuple = sorted(self.suspendedCardsTuple, key=lambda x: x[ind], reverse = not asc)
+        self.cardNums = []
+        self.newOwners = []
+        self.datesSuspended = []
+        self.prevOwners = []
+        self.suspendedCardsTreeIndex = 0
+        for entry in self.suspendedCardsTuple:
+            self.cardNums.append(entry[0])
+            self.newOwners.append(entry[1])
+            self.datesSuspended.append(entry[2])
+            self.prevOwners.append(entry[3])
+            self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            self.suspendedCardsTreeIndex += 1
 
     #===============Administrator Functionality - Breeze Card Management=====================
     def adminFunctionalityWindowBreezecardManagementButtonClicked(self):
@@ -969,7 +1299,7 @@ class MARTA_Client:
 
     def breezecard_manage_closing(self):
         self.cursor.execute("DROP VIEW ManageBreezecard")
-        self.manageBreezecardExist = 0
+        self.manageBreezecardExist = False
         self.breezecardManagementWindow.withdraw()
 
     def buildBreezecardManagementWindow(self, breezecardManagementWindow):
@@ -1661,10 +1991,223 @@ class MARTA_Client:
         self.db.commit()
         messagebox.showwarning("Change Successfully", "Fare information has been updated for %s" % self.selectedStation)
 
-        #####Have Error if the station window is closed
+        #####Have Error if the station window is closed before this page
         self.buildStationManagementWindow(self.stationManagementWindow)
         self.buildViewStationWindow(self.viewStationWindow,self.curItem)
         return True
+
+
+
+######## FUNCTION NOT DONE
+    #=====================Passenger FLow Report===============
+    def adminPassengerFlowClicked(self):
+        self.createPassengerFlowWindow()
+        self.buildPassengerFlowWindow(self.passengerFlowWindow)
+
+    def createPassengerFlowWindow(self):
+        self.passengerFlowWindow = Toplevel()
+        self.passengerFlowWindow.title("Passenger Flow Report")
+        self.passengerFlowWindow.protocol("WM_DELETE_WINDOW", self.flowreportdropview)
+
+    def flowreportdropview(self):
+        self.cursor.execute("DROP VIEW PassengerFlowReport")
+        self.passengerFlowReportExist = False
+        self.passengerFlowWindow.withdraw()
+
+    def buildPassengerFlowWindow(self, passengerFlowWindow):
+        #Add components for the Passenger FLow Report
+        self.passengerFlowTableTreeView = ttk.Treeview(passengerFlowWindow, column=("stationName",
+                                                                                  "numPassengersIn",
+                                                                                  "numPassengersOut",
+                                                                                  "flow",
+                                                                                  "revenue"))
+        self.passengerFlowTableTreeView['show'] = 'headings'
+
+        self.passengerFlowTableTreeView.column("stationName", width=180, anchor="center")
+        self.passengerFlowTableTreeView.column("numPassengersIn", width=130, anchor="center")
+        self.passengerFlowTableTreeView.column("numPassengersOut", width=130, anchor="center")
+        self.passengerFlowTableTreeView.column("flow", width=70, anchor="center")
+        self.passengerFlowTableTreeView.column("revenue", width=70, anchor="center")
+
+        self.passengerFlowTableTreeView.heading("stationName", text="Station Name ⇕")
+        self.passengerFlowTableTreeView.heading("numPassengersIn", text="# Passengers In")
+        self.passengerFlowTableTreeView.heading("numPassengersOut", text="# Passengers Out")
+        self.passengerFlowTableTreeView.heading("flow", text="Flow")
+        self.passengerFlowTableTreeView.heading("revenue", text="Revenue ($)")
+
+        if not self.passengerFlowReportExist:
+            defaultflowstartTime = "0001-01-01 00:00:00"
+            defaultflowstartTime = datetime.strptime(defaultflowstartTime, "%Y-%m-%d %H:%M:%S")
+            defaultflowendTime = "9999-01-01 00:00:00"
+            defaultflowendTime = datetime.strptime(defaultflowendTime, "%Y-%m-%d %H:%M:%S")
+
+            self.passengerFlowReportExist = True
+            self.cursor.execute("CREATE VIEW PassengerFlowReport AS (SELECT a.stopID as stationID,"
+                " (SELECT name FROM Station s WHERE stationID = s.stopID) AS stationName,"
+                " (SELECT COUNT(*) FROM Trip b"
+                " WHERE (stationID = b.startID"
+                " AND b.startTime >= %s"
+                " AND b.startTime <= %s)) AS flowIn,"
+                " (SELECT COUNT(*) FROM Trip c"
+                " WHERE (stationID = c.endID"
+                " AND b.startTime >= %s"
+                " AND b.startTime <= %s)) AS flowOut,"
+                " ((SELECT COUNT(*) FROM Trip b"
+                " WHERE (stationID = b.startID"
+                " AND b.startTime >= %s"
+                " AND b.startTime <= %s))"
+                " - (SELECT COUNT(*) FROM Trip c"
+                " WHERE (stationID = c.endID"
+                " AND c.startTime >= %s"
+                " AND c.startTime <= %s))) AS flow,"
+                " (SELECT SUM(d.currentFare) FROM Trip d"
+                " WHERE (stationID = d.startID"
+                " AND d.startTime >= %s"
+                " AND d.startTime <= %s)) AS revenue"
+                " FROM Station a"
+                " JOIN Trip b ON b.endID = a.stopID OR b.startID = a.stopID"
+                " WHERE (b.startTime >= %s AND b.startTime <= %s)"
+                " GROUP BY stationID)", (defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime))
+
+        self.cursor.execute("SELECT * FROM PassengerFlowReport")
+        self.flowReportInfoTuple = self.cursor.fetchall()
+        self.flowStationID = []
+        self.flowStationName = []
+        self.flowPassengerIn = []
+        self.flowPassengerOut = []
+        self.flowFlow = []
+        self.flowRevenue = []
+        self.passengerFlowTableTreeIndex = 0
+        for flowReportInfo in self.flowReportInfoTuple:
+            self.flowStationID.append(flowReportInfo[0])
+            self.flowStationName.append(flowReportInfo[1])
+            self.flowPassengerIn.append(flowReportInfo[2])
+            self.flowPassengerOut.append(flowReportInfo[3])
+            self.flowFlow.append(flowReportInfo[4])
+            self.flowRevenue.append(flowReportInfo[5])
+            self.passengerFlowTableTreeView.insert('', self.passengerFlowTableTreeIndex, values = (flowReportInfo[1], flowReportInfo[2], flowReportInfo[3], flowReportInfo[4], flowReportInfo[5]))
+            self.passengerFlowTableTreeIndex+= 1
+
+        self.passengerFlowTableTreeView.bind("<ButtonRelease-1>", self.selectItem_PassengerFlowTable)
+        self.passengerFlowTableTreeView.grid(row=3, column=0, sticky=E, padx=10, pady=10, columnspan=7)
+        startTimeLabel = Label(passengerFlowWindow,
+                                text="Start Time")
+        startTimeLabel.grid(row=1, column=0, padx = 10, pady = 10, sticky=W)
+        endTimeLabel = Label(passengerFlowWindow,
+                              text="End Time")
+        endTimeLabel.grid(row=2, column=0, padx = 10, pady = 10, sticky=W)
+
+        startTimeEntry = Entry(passengerFlowWindow)
+        startTimeEntry.grid(row=1, column=1, sticky=W+E)
+
+        endTimeEntry = Entry(passengerFlowWindow)
+        endTimeEntry.grid(row=2, column=1, sticky=W+E)
+
+        updateButton = Button(passengerFlowWindow,
+                              text="Update")
+        resetButton = Button(passengerFlowWindow,
+                             text="Reset")
+        updateButton.grid(row=1, column=2, rowspan=2, sticky=W+E+N+S, padx = (20,10), pady = 20)
+        resetButton.grid(row=1, column=3, rowspan=2, sticky=W+E+N+S, padx = (10,20), pady = 20)
+
+        # edited and changed
+        self.passFlowStartTime = StringVar()
+        startTimeEntry = Entry(passengerFlowWindow, textvariable=self.passFlowStartTime)
+        startTimeEntry.grid(row=1, column=1, sticky=W + E)
+
+        self.passFlowEndTime = StringVar()
+        endTimeEntry = Entry(passengerFlowWindow, textvariable=self.passFlowEndTime)
+        endTimeEntry.grid(row=2, column=1, sticky=W + E)
+
+        updateButton = Button(passengerFlowWindow,
+                              text="Update", command=self.passengerFlowReportUpdateButtonClicked)
+        resetButton = Button(passengerFlowWindow,
+                             text="Reset", command=self.passengerFlowReportResetClicked)
+        updateButton.grid(row=1, column=2, rowspan=2, sticky=W + E + N + S, padx=(20, 10), pady=20)
+        resetButton.grid(row=1, column=3, rowspan=2, sticky=W + E + N + S, padx=(10, 20), pady=20)
+
+    def passengerFlowReportResetClicked(self):
+        self.cursor.execute("DROP VIEW PassengerFlowReport")
+        self.passengerFlowReportExist = False
+        self.buildPassengerFlowWindow(self.passengerFlowWindow)
+        return True
+
+    def passengerFlowReportUpdateButtonClicked(self):
+        flowReportStart = self.passFlowStartTime.get()
+        flowReportEnd = self.passFlowEndTime.get()
+
+        if not flowReportStart:
+            flowReportStart = "0001-01-01 00:00:00"
+            flowReportStart = datetime.strptime(flowReportStart, "%Y-%m-%d %H:%M:%S")
+        else:
+            try:
+                flowReportStart = datetime.strptime(flowReportStart, "%Y-%m-%d %H:%M:%S")
+            except:
+                messagebox.showwarning("Input invalid", "The Start Time input is invalid.")
+                return False
+
+        if not flowReportEnd:
+            flowReportEnd = "9999-01-01 00:00:00"
+            flowReportEnd = datetime.strptime(flowReportEnd, "%Y-%m-%d %H:%M:%S")
+        else:
+            try:
+                flowReportEnd = datetime.strptime(flowReportEnd, "%Y-%m-%d %H:%M:%S")
+            except:
+                messagebox.showwarning("Input invalid", "The End Time input is invalid.")
+                return False
+
+        self.cursor.execute("DROP VIEW PassengerFlowReport")
+        self.cursor.execute("CREATE VIEW PassengerFlowReport AS (SELECT a.stopID as stationID,"
+            " (SELECT name FROM Station s WHERE stationID = s.stopID) AS stationName,"
+            " (SELECT COUNT(*) FROM Trip b"
+            " WHERE (stationID = b.startID"
+            " AND b.startTime >= %s"
+            " AND b.startTime <= %s)) AS flowIn,"
+            " (SELECT COUNT(*) FROM Trip c"
+            " WHERE (stationID = c.endID"
+            " AND b.startTime >= %s"
+            " AND b.startTime <= %s)) AS flowOut,"
+            " ((SELECT COUNT(*) FROM Trip b"
+            " WHERE (stationID = b.startID"
+            " AND b.startTime >= %s"
+            " AND b.startTime <= %s))"
+            " - (SELECT COUNT(*) FROM Trip c"
+            " WHERE (stationID = c.endID"
+            " AND c.startTime >= %s"
+            " AND c.startTime <= %s))) AS flow,"
+            " (SELECT SUM(d.currentFare) FROM Trip d"
+            " WHERE (stationID = d.startID"
+            " AND d.startTime >= %s"
+            " AND d.startTime <= %s)) AS revenue"
+            " FROM Station a"
+            " JOIN Trip b ON b.endID = a.stopID OR b.startID = a.stopID"
+            " WHERE (b.startTime >= %s AND b.startTime <= %s)"
+            " GROUP BY stationID)", (flowReportStart, flowReportEnd,flowReportStart, flowReportEnd,flowReportStart, flowReportEnd,flowReportStart, flowReportEnd,flowReportStart, flowReportEnd,flowReportStart, flowReportEnd))
+
+        self.buildPassengerFlowWindow(self.passengerFlowWindow)
+        return True
+
+
+    def selectItem_PassengerFlowTable(self, event):
+        # toggle order, and change headers to indicate order.
+        region = self.passengerFlowTableTreeView.identify("region", event.x, event.y)
+        if region == "heading":
+            if (self.passengerFlowTableTreeView.identify_column(event.x) == '#1'):
+                self.sortPassengerFlowTree(self.up_FlowTableOrder)
+                self.up_FlowTableOrder = not self.up_FlowTableOrder
+
+    def sortPassengerFlowTree(self, inorder):
+        for i in self.passengerFlowTableTreeView.get_children():
+            self.passengerFlowTableTreeView.delete(i)
+        self.passengerFlowValueTupleList = sorted(self.passengerFlowValueTupleList, key=lambda x: x[0], reverse = not inorder)
+        j = 0
+        for e in self.passengerFlowValueTupleList:
+            self.passengerFlowTableTreeView.insert('', j, values=e)
+            j+=1
+        if (inorder):
+            self.passengerFlowTableTreeView.heading('#1', text='Station Name ▲')
+        else:
+            self.passengerFlowTableTreeView.heading('#1', text='Station Name ▼')
 
 
     # --------------------Database Connection-----------------
