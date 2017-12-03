@@ -50,7 +50,7 @@ class DateEntry(tk.Frame):
         self.entry_3.bind('<KeyRelease>', self._e3_check)
         self.entry_4.bind('<KeyRelease>', self._e4_check)
         self.entry_5.bind('<KeyRelease>', self._e5_check)
-        self.entry_6.bind('<KeyRelease>', self._e5_check)
+        self.entry_6.bind('<KeyRelease>', self._e6_check)
 
 
     def _backspace(self, entry):
@@ -109,17 +109,17 @@ class DateEntry(tk.Frame):
 
     def get(self):
 
-        return self.entry_1.get()\
+        return self.entry_1.get()[:4]\
                +'-'\
-               +self.entry_2.get()\
+               +self.entry_2.get()[:2]\
                +'-'\
-               +self.entry_3.get()\
+               +self.entry_3.get()[:2]\
                +' '\
-               +self.entry_4.get()\
+               +self.entry_4.get()[:2]\
                +':'\
-               +self.entry_5.get() \
+               +self.entry_5.get()[:2] \
                +':'\
-               +self.entry_6.get()
+               +self.entry_6.get()[:2]
 
 
 #              MARTA CLIENT SERVER
@@ -956,15 +956,17 @@ class MARTA_Client:
         startTimeLabel.grid(row=1, column=1, sticky=W)
 
         self.entryStartTime = StringVar()
-        startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=40)
-        startTimeEntry.grid(row=1, column=2, sticky=W)
+        # startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=40)
+        self.startTimeEntry = DateEntry(viewTripHistoryWindow, border=0)
+        self.startTimeEntry.grid(row=1, column=2, sticky=W)
 
         endTimeLabel = Label(viewTripHistoryWindow, text="End Time: ")
         endTimeLabel.grid(row=2, column=1, sticky=W)
 
         self.entryEndTime = StringVar()
-        endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=40)
-        endTimeEntry.grid(row=2, column=2, sticky=W)
+        # endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=40)
+        self.endTimeEntry = DateEntry(viewTripHistoryWindow, border=0)
+        self.endTimeEntry.grid(row=2, column=2, sticky=W)
 
         updateButton = Button(viewTripHistoryWindow, text="Update", command=self.viewTripHistoryUpdateClicked)
         updateButton.grid(row=2, column=3, sticky=W)
@@ -1022,11 +1024,11 @@ class MARTA_Client:
         pass
 
     def viewTripHistoryUpdateClicked(self):
-        startTime = self.entryStartTime.get()
-        endTime = self.entryEndTime.get()
+        startTime = self.startTimeEntry.get()
+        endTime = self.endTimeEntry.get()
 
         #If only startTime was input
-        if not startTime:
+        if not startTime or startTime == "-- ::":
             startTime = "0001-01-01 00:00:00"
             startDateFormat = datetime.strptime(startTime, "%Y-%m-%d %H:%M:%S")
         else:
@@ -1036,7 +1038,7 @@ class MARTA_Client:
                 messagebox.showwarning("Input invalid", "The Start Time input is invalid.")
                 return False
 
-        if not endTime:
+        if not endTime or endTime == "-- ::":
             endTime = "9999-01-01 00:00:00"
             endDateFormat = datetime.strptime(endTime, "%Y-%m-%d %H:%M:%S")
         else:
@@ -2258,8 +2260,8 @@ class MARTA_Client:
                               text="End Time")
         endTimeLabel.grid(row=2, column=0, padx = 10, pady = 10, sticky=W)
 
-        startTimeEntry = Entry(passengerFlowWindow)
-        startTimeEntry.grid(row=1, column=1, sticky=W+E)
+        # startTimeEntry = DateEntry(passengerFlowWindow)
+        # startTimeEntry.grid(row=1, column=1, sticky=W+E)
 
         endTimeEntry = Entry(passengerFlowWindow)
         endTimeEntry.grid(row=2, column=1, sticky=W+E)
@@ -2273,12 +2275,12 @@ class MARTA_Client:
 
         # edited and changed
         self.passFlowStartTime = StringVar()
-        startTimeEntry = Entry(passengerFlowWindow, textvariable=self.passFlowStartTime)
-        startTimeEntry.grid(row=1, column=1, sticky=W + E)
+        self.flowStartTimeEntry = DateEntry(passengerFlowWindow)
+        self.flowStartTimeEntry.grid(row=1, column=1, sticky=W + E)
 
         self.passFlowEndTime = StringVar()
-        endTimeEntry = Entry(passengerFlowWindow, textvariable=self.passFlowEndTime)
-        endTimeEntry.grid(row=2, column=1, sticky=W + E)
+        self.flowEndTimeEntry = DateEntry(passengerFlowWindow)
+        self.flowEndTimeEntry.grid(row=2, column=1, sticky=W + E)
 
         updateButton = Button(passengerFlowWindow,
                               text="Update", command=self.passengerFlowReportUpdateButtonClicked)
@@ -2294,10 +2296,12 @@ class MARTA_Client:
         return True
 
     def passengerFlowReportUpdateButtonClicked(self):
-        flowReportStart = self.passFlowStartTime.get()
-        flowReportEnd = self.passFlowEndTime.get()
+        flowReportStart = self.flowStartTimeEntry.get()
+        print("flowReportStart:",flowReportStart)
+        flowReportEnd = self.flowEndTimeEntry.get()
+        print("flowReportEnd:", flowReportEnd)
 
-        if not flowReportStart:
+        if not flowReportStart or flowReportStart == "-- ::":
             flowReportStart = "0001-01-01 00:00:00"
             flowReportStart = datetime.strptime(flowReportStart, "%Y-%m-%d %H:%M:%S")
         else:
@@ -2307,7 +2311,7 @@ class MARTA_Client:
                 messagebox.showwarning("Input invalid", "The Start Time input is invalid.")
                 return False
 
-        if not flowReportEnd:
+        if not flowReportEnd or flowReportEnd == "-- ::":
             flowReportEnd = "9999-01-01 00:00:00"
             flowReportEnd = datetime.strptime(flowReportEnd, "%Y-%m-%d %H:%M:%S")
         else:
