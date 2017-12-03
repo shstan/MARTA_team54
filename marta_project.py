@@ -62,49 +62,55 @@ class DateEntry(tk.Frame):
         cont = self.entry_1.get()
         if len(cont) >= 4:
             self.entry_2.focus()
-        if len(cont) > 4 or not cont[-1].isdigit():
-            self._backspace(self.entry_1)
-            self.entry_1.focus()
+        if len(cont) > 0:
+            if len(cont) > 4 or not cont[-1].isdigit():
+                self._backspace(self.entry_1)
+                self.entry_1.focus()
 
     def _e2_check(self, e):
         cont = self.entry_2.get()
         if len(cont) >= 2:
             self.entry_3.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_2)
-            self.entry_2.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_2)
+                self.entry_2.focus()
 
     def _e3_check(self, e):
         cont = self.entry_3.get()
         if len(cont) >= 2:
             self.entry_4.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_3)
-            self.entry_3.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_3)
+                self.entry_3.focus()
 
     def _e4_check(self, e):
         cont = self.entry_4.get()
         if len(cont) >= 2:
             self.entry_5.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_4)
-            self.entry_4.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_4)
+                self.entry_4.focus()
 
     def _e5_check(self, e):
         cont = self.entry_5.get()
         if len(cont) >= 2:
             self.entry_6.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_5)
-            self.entry_5.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_5)
+                self.entry_5.focus()
 
     def _e6_check(self, e):
         cont = self.entry_6.get()
         if len(cont) >= 2:
             self.entry_6.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_6)
-            self.entry_6.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_6)
+                self.entry_6.focus()
 
 
     def get(self):
@@ -1172,7 +1178,7 @@ class MARTA_Client:
         self.suspendedCardsTree.column("dateSuspended", width=140, anchor="center")
         self.suspendedCardsTree.column("prevOwner", width=120, anchor="center")
 
-        self.suspendedCardsTree.heading("cardNum", text="Card # ▲")
+        self.suspendedCardsTree.heading("cardNum", text="Card # ▼")
         self.suspendedCardsTree.heading("newOwner", text="New Owner")
         self.suspendedCardsTree.heading("dateSuspended", text="Date Suspended ▲▼")
         self.suspendedCardsTree.heading("prevOwner", text="Previous Owner")
@@ -1243,7 +1249,7 @@ class MARTA_Client:
             "FROM Conflict "
             "INNER JOIN Breezecard ON ( conCardNum = cardNum ) "
             + self.current_suspended_card_sort)
-        self.suspendedCardsTree.heading('#1', text='Card # ▲')
+        self.suspendedCardsTree.heading('#1', text='Card # ▼')
         self.suspendedCardsTree.heading('#3', text='Date Suspended ▲▼')
 
         self.suspendedCardsTuple = self.cursor.fetchall()
@@ -1324,7 +1330,7 @@ class MARTA_Client:
                   type(self.suspendedCardsTree.identify_column(event.x)))
             if (self.suspendedCardsTree.identify_column(event.x) == '#1'):
                 self.suspended_card_num_asc = not self.suspended_card_num_asc
-                self.sortSuspendedCardsByTupleIndex(self.suspended_card_num_asc , 1)
+                self.sortSuspendedCardsByTupleIndex(self.suspended_card_num_asc, 1)
                 if (self.suspended_card_num_asc):
                     self.suspendedCardsTree.heading('#1', text='Card # ▲')
                 else:
@@ -1333,9 +1339,9 @@ class MARTA_Client:
             elif (self.suspendedCardsTree.identify_column(event.x) == '#3'):
                 self.sortSuspendedCardsByTupleIndex(self.suspended_date_asc, 3)
                 if (self.suspended_date_asc):
-                    self.suspendedCardsTree.heading('#3', text='Date Suspended ▼')
-                else:
                     self.suspendedCardsTree.heading('#3', text='Date Suspended ▲')
+                else:
+                    self.suspendedCardsTree.heading('#3', text='Date Suspended ▼')
                 self.suspended_date_asc = not self.suspended_date_asc
                 self.suspendedCardsTree.heading('#1', text='Card # ▲▼')
 
@@ -1346,7 +1352,7 @@ class MARTA_Client:
     def sortSuspendedCardsByTupleIndex(self, asc, ind):
         for i in self.suspendedCardsTree.get_children():
             self.suspendedCardsTree.delete(i)
-        self.suspendedCardsTuple = sorted(self.suspendedCardsTuple, key=lambda x: x[ind], reverse = not asc)
+        self.suspendedCardsTuple = sorted(self.suspendedCardsTuple, key=lambda x: x[ind - 1], reverse = not asc)
         self.cardNums = []
         self.newOwners = []
         self.datesSuspended = []
@@ -1358,6 +1364,7 @@ class MARTA_Client:
             self.datesSuspended.append(entry[2])
             self.prevOwners.append(entry[3])
             self.suspendedCardsTree.insert('', self.suspendedCardsTreeIndex, values=entry)
+            print(entry)
             self.suspendedCardsTreeIndex += 1
 
     #===============Administrator Functionality - Breeze Card Management=====================
