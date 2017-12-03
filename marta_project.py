@@ -953,7 +953,7 @@ class MARTA_Client:
         #self.passusername -> user
 
         startTimeLabel = Label(viewTripHistoryWindow, text="Start Time: ")
-        startTimeLabel.grid(row=1, column=1, sticky=W)
+        startTimeLabel.grid(row=1, column=1, sticky=E)
 
         self.entryStartTime = StringVar()
         # startTimeEntry =Entry(viewTripHistoryWindow, textvariable=self.entryStartTime, width=40)
@@ -961,7 +961,7 @@ class MARTA_Client:
         self.startTimeEntry.grid(row=1, column=2, sticky=W)
 
         endTimeLabel = Label(viewTripHistoryWindow, text="End Time: ")
-        endTimeLabel.grid(row=2, column=1, sticky=W)
+        endTimeLabel.grid(row=2, column=1, sticky=E)
 
         self.entryEndTime = StringVar()
         # endTimeEntry = Entry(viewTripHistoryWindow, textvariable=self.entryEndTime, width=40)
@@ -983,7 +983,7 @@ class MARTA_Client:
         self.viewTripHistoryTree.column("fare", width=100, anchor="center")
         self.viewTripHistoryTree.column("cardNum", width=150, anchor="center")
 
-        self.viewTripHistoryTree.heading("startTime", text="Time")
+        self.viewTripHistoryTree.heading("startTime", text="Time ▼")
         self.viewTripHistoryTree.heading("startStation", text="Departure")
         self.viewTripHistoryTree.heading("endStation", text="Arrival")
         self.viewTripHistoryTree.heading("fare", text="Fare Paid")
@@ -991,7 +991,7 @@ class MARTA_Client:
 
         if not self.viewTripHistoryExist:
             self.viewTripHistoryExist = True
-            self.cursor.execute("CREATE VIEW TripHistory AS (SELECT startTime, startID, endID, currentFare, bcNum FROM Trip WHERE bcNUM IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s))", self.passusername)
+            self.cursor.execute("CREATE VIEW TripHistory AS (SELECT startTime, startID, endID, currentFare, bcNum FROM Trip WHERE bcNUM IN (SELECT cardNum FROM Breezecard WHERE cUsername = %s) ORDER BY startTime DESC);", self.passusername)
 
         self.cursor.execute("SELECT * FROM TripHistory")
         self.viewTripHistoryTuple = self.cursor.fetchall()
@@ -1001,6 +1001,7 @@ class MARTA_Client:
         self.viewTripHistoryFare = []
         self.viewTripHistoryCardNum = []
         self.viewTripHistoryTreeIndex = 0
+        self.tripHistoryTupleList = []
         for entry in self.viewTripHistoryTuple:
             self.cursor.execute("SELECT name FROM Station WHERE stopID = %s", entry[1])
             startName = self.cursor.fetchone()[0]
@@ -1012,6 +1013,7 @@ class MARTA_Client:
             self.viewTripHistoryFare.append(entry[3])
             self.viewTripHistoryCardNum.append(entry[4])
             self.viewTripHistoryTree.insert('', self.viewTripHistoryTreeIndex, values=(entry[0], startName, endName, entry[3], entry[4]))
+            self.tripHistoryTupleList.append((entry[0], startName, endName, entry[3], entry[4]))
             self.viewTripHistoryTreeIndex+=1
 
         #INPUT SQL QUERY
@@ -1019,9 +1021,35 @@ class MARTA_Client:
         self.viewTripHistoryTree.grid(row=5, column=1, columnspan=6, padx=20, pady = (10,10))
         self.viewTripHistoryTree.bind("<ButtonRelease-1>", self.selectTrip)
 
+        self.orderTripHistoryEntry = True
 
-    def selectTrip(self, value):
-        pass
+
+    def selectTrip(self, event):
+        region = self.viewTripHistoryTree.identify("region", event.x, event.y)
+        if region == "heading":
+            if (self.viewTripHistoryTree.identify_column(event.x) == '#1'):
+                # print("name pressed")
+                self.sortTripHistoryByStartTime(self.orderTripHistoryEntry)
+                if self.orderTripHistoryEntry:
+                    self.viewTripHistoryTree.heading('#1', text='Time ▲')
+                else:
+                    self.viewTripHistoryTree.heading('#1', text='Time ▼')
+                self.orderTripHistoryEntry = not self.orderTripHistoryEntry
+
+    def sortTripHistoryByStartTime(self, order):
+        for i in self.viewTripHistoryTree.get_children():
+            self.viewTripHistoryTree.delete(i)
+        self.tripHistoryTupleList = sorted(self.tripHistoryTupleList, key=lambda x: x[0], reverse=not order)
+        pk = 0
+        for entry in self.tripHistoryTupleList:
+            self.viewTripHistoryTree.insert('', pk, values=entry)
+            pk += 1
+            print(pk)
+            print(entry)
+
+
+
+    # def selectTripHistoryItem(self, event):
 
     def viewTripHistoryUpdateClicked(self):
         startTime = self.startTimeEntry.get()
@@ -2185,7 +2213,7 @@ class MARTA_Client:
                                                                                   "flow",
                                                                                   "revenue"))
         self.passengerFlowTableTreeView['show'] = 'headings'
-
+        self.up_FlowTableOrder = True;
         self.passengerFlowTableTreeView.column("stationName", width=180, anchor="center")
         self.passengerFlowTableTreeView.column("numPassengersIn", width=130, anchor="center")
         self.passengerFlowTableTreeView.column("numPassengersOut", width=130, anchor="center")
@@ -2230,7 +2258,8 @@ class MARTA_Client:
                 " FROM Station a"
                 " JOIN Trip b ON b.endID = a.stopID OR b.startID = a.stopID"
                 " WHERE (b.startTime >= %s AND b.startTime <= %s)"
-                " GROUP BY stationID)", (defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime))
+                " GROUP BY stationID)"
+                                "ORDER BY stationName;", (defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime,defaultflowstartTime, defaultflowendTime))
 
         self.cursor.execute("SELECT * FROM PassengerFlowReport")
         self.flowReportInfoTuple = self.cursor.fetchall()
@@ -2241,6 +2270,7 @@ class MARTA_Client:
         self.flowFlow = []
         self.flowRevenue = []
         self.passengerFlowTableTreeIndex = 0
+        self.passengerFlowValueTupleList = []
         for flowReportInfo in self.flowReportInfoTuple:
             self.flowStationID.append(flowReportInfo[0])
             self.flowStationName.append(flowReportInfo[1])
@@ -2248,6 +2278,7 @@ class MARTA_Client:
             self.flowPassengerOut.append(flowReportInfo[3])
             self.flowFlow.append(flowReportInfo[4])
             self.flowRevenue.append(flowReportInfo[5])
+            self.passengerFlowValueTupleList.append(flowReportInfo)
             self.passengerFlowTableTreeView.insert('', self.passengerFlowTableTreeIndex, values = (flowReportInfo[1], flowReportInfo[2], flowReportInfo[3], flowReportInfo[4], flowReportInfo[5]))
             self.passengerFlowTableTreeIndex+= 1
 
