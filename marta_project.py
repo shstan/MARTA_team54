@@ -108,7 +108,6 @@ class DateEntry(tk.Frame):
 
 
     def get(self):
-        print(type(self.entry_1.get()))
 
         return self.entry_1.get()\
                +'-'\
@@ -321,11 +320,9 @@ class MARTA_Client:
         ]
         for ops, val in list_option:
             if val == "exist":
-                print ("inside")
                 r1 = Radiobutton(newUserRegistrationWindow, text=ops, variable=self.var, value=val, command=self.radioButtonChanging)
                 r1.grid(row=6, column=1, sticky=W)
             if val == "new":
-                print ("inside")
                 r2 = Radiobutton(newUserRegistrationWindow, text=ops, variable=self.var, value=val, command=self.radioButtonChanging)
                 r2.grid(row=8, column=1, sticky=W)
         self.var.set("new")
@@ -351,7 +348,6 @@ class MARTA_Client:
 
 
     def radioButtonChanging(self):
-        print ("You selected the option " + str(self.var.get()))
         # self.var.set(value)
         if str(self.var.get()) == "exist":
             # print (str(self.var.get()) + " : in if statement")
@@ -907,8 +903,15 @@ class MARTA_Client:
             messagebox.showwarning("Invalid Credit Card", "The Credit Card is invalid. \nCredit Card input should be 16-digit number.")
             return False
         #Error: entryValue not digit
-        if (entryValue.isfloat() == 0):
-            messagebox.showwarning("Invalid Value", "The value should be a number.")
+        try:
+            float(entryValue)
+        except:
+            messagebox.showwarning("Invalid value", "The value should be a number.")
+            return False
+
+        #Error: Value less than 0
+        if float(entryValue) < 0:
+            messagebox.showwarning("Invalid value", "You can't put negative value.")
             return False
 
         #Error: currentValue + newValue = 1000 (value exceeded)
@@ -1498,17 +1501,20 @@ class MARTA_Client:
             startValueFilter = startValueFilter
         else:
             #Error if start value input is invalid (not digit)
-            print(type(startValueFilter))
-            if (startValueFilter.isfloat() == 0):
-                messagebox.showwarning("Value Input Invalid", "Value should be number.")
+            try:
+                float(startValueFilter)
+            except:
+                messagebox.showwarning("Value Input Invalid", "Value should be a number.")
                 return False
 
         if not endValueFilter:
             endValueFilter = endValueFilter
         else:
             #Error if end value input is invalid (not digit)
-            if (endValueFilter.isfloat() == 0):
-                messagebox.showwarning("Value Input Invalid", "Value should be nubmer.")
+            try:
+                float(endValueFilter)
+            except:
+                messagebox.showwarning("Value Input Invalid", "Value should be a number.")
                 return False
 
         #If ownerFilter is empty
@@ -1564,10 +1570,14 @@ class MARTA_Client:
         if not newValue:
             messagebox.showwarning("Invalid Value","Please input value you want to add to this card")
             return False
+        else:
+            try:
+                float(newValue)
+            except:
+                messagebox.showwarning("Invalid Value", "Please input valid value.")
+                return False
 
         #Error: value invalid (didn't put valid digit)
-        if (newValue.isfloat() == 0):
-            messagebox.showwarning("Invalid Value", "Please input valid value.")
 
         oldValue = float(selectedInformation[1])
         newValue = float(newValue)
@@ -1575,6 +1585,10 @@ class MARTA_Client:
         #Error: Overvalue
         if ((newValue + oldValue) > 1000.00):
             messagebox.showwarning("Breeze Card cannot exceed $1000.00.","Please enter a lower value.")
+            return False
+
+        if (newValue <= 0):
+            messagebox.showwarning("Breezecard cannot be lower than $0.00.", "You cannot put negative value.")
             return False
 
         finalValue = oldValue + newValue
@@ -1588,6 +1602,7 @@ class MARTA_Client:
         curElement = self.cardNumValueOwnerTree.selection()
         selectedInformation = self.cardNumValueOwnerTree.item(curElement)['values']
         self.newOwner = self.transferSelectedCard.get()
+        print(selectedInformation)
 
         #Error: If nothing is selected
         if not self.cardNumValueOwnerTree.selection():
@@ -1625,6 +1640,30 @@ class MARTA_Client:
             messagebox.showwarning("Transfer Success", "Transfer has been succeeded.")
             return True
         else:
+            #1) Transfer card is "suspended"
+            if (previousOwner == "Suspended"):
+                self.cursor.execute("SELECT cUsername FROM Breezecard WHERE cardNum = %s", selectedBreeze)
+                suspendedOwner = self.cursor.fetchone()[0]
+                #1-1) If previousOwner is the suspendedOwner
+
+                print(suspendedOwner)
+                print(self.newOwner)
+
+                if (suspendedOwner == self.newOwner):
+                    self.cursor.execute("DELETE FROM Conflict WHERE conCardNum = %s", selectedBreeze)
+                    self.db.commit()
+                    self.buildBreezecardManagementWindow(self.breezecardManagementWindow)
+                    messagebox.showwarning("Transfer Success", "Transfer has been succeeded.")
+                    return True
+                #1-2) If previousOwner is not the suspendedOwner
+                else:
+                    self.cursor.execute("DELETE FROM Conflict WHERE conCardNum = %s", selectedBreeze)
+                    self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s", (self.newOwner, selectedBreeze))
+                    self.db.commit()
+                    self.buildBreezecardManagementWindow(self.breezecardManagementWindow)
+                    messagebox.showwarning("Transfer Success", "Transfer has been succeeded.") 
+                    return True
+
             #2) Transfer card to new owner and previous owner doesn't have breezecard
             self.cursor.execute("SELECT COUNT(*) FROM Breezecard WHERE cUsername = %s", previousOwner)
             numberCardPreviousOwner = self.cursor.fetchone()[0]
