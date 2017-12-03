@@ -446,7 +446,7 @@ class MARTA_Client:
                     self.hashpassword = self.computeMD5hash(self.regpassword)
                     self.cursor.execute("INSERT INTO User(username, password, IsAdmin) VALUES(%s, %s, FALSE)", (self.regusername, self.hashpassword))
                     self.cursor.execute("INSERT INTO Passenger(pUsername, email) VALUES(%s, %s)", (self.regusername, self.regemail))
-                    self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s", (self.regusername, self.regpassword))
+                    self.cursor.execute("UPDATE Breezecard SET cUsername = %s WHERE cardNum = %s", (self.regusername, self.existBreeze))
                     self.db.commit()
                     messagebox.showwarning("Registration Success", "You have successfully registered to MARTA system! Please log in.")
                     self.newUserRegistrationWindow.destroy()
@@ -489,7 +489,7 @@ class MARTA_Client:
             return randomnumbergen
         else:
             randomnumbergen = str(randint(0,9)) + str(randint(100000000000000,999999999999999))
-            randomnumbergen = self.check_randomnumberBreezecard
+            randomnumbergen = self.randomBreezecardGenerator
             return randomnumbergen
 
     #=====================Passenger Functionality Window=======================
@@ -1840,7 +1840,7 @@ class MARTA_Client:
         r2 = Radiobutton(createNewStationWindow, text="Train Station", variable=self.typeSelected, value="train")
         r2.grid(row=8, column=2, sticky=W)
 
-        nearSEctionLabel = Label(createNewStationWindow, text="Nearest Intersetion stopID")
+        nearSEctionLabel = Label(createNewStationWindow, text="Nearest Intersection stopID: ")
         nearSEctionLabel.grid(row=7, column=2, sticky=W)
 
         #Description of Open Station Label
