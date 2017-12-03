@@ -62,49 +62,55 @@ class DateEntry(tk.Frame):
         cont = self.entry_1.get()
         if len(cont) >= 4:
             self.entry_2.focus()
-        if len(cont) > 4 or not cont[-1].isdigit():
-            self._backspace(self.entry_1)
-            self.entry_1.focus()
+        if len(cont) > 0:
+            if len(cont) > 4 or not cont[-1].isdigit():
+                self._backspace(self.entry_1)
+                self.entry_1.focus()
 
     def _e2_check(self, e):
         cont = self.entry_2.get()
         if len(cont) >= 2:
             self.entry_3.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_2)
-            self.entry_2.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_2)
+                self.entry_2.focus()
 
     def _e3_check(self, e):
         cont = self.entry_3.get()
         if len(cont) >= 2:
             self.entry_4.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_3)
-            self.entry_3.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_3)
+                self.entry_3.focus()
 
     def _e4_check(self, e):
         cont = self.entry_4.get()
         if len(cont) >= 2:
             self.entry_5.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_4)
-            self.entry_4.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_4)
+                self.entry_4.focus()
 
     def _e5_check(self, e):
         cont = self.entry_5.get()
         if len(cont) >= 2:
             self.entry_6.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_5)
-            self.entry_5.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_5)
+                self.entry_5.focus()
 
     def _e6_check(self, e):
         cont = self.entry_6.get()
         if len(cont) >= 2:
             self.entry_6.focus()
-        if len(cont) > 2 or not cont[-1].isdigit():
-            self._backspace(self.entry_6)
-            self.entry_6.focus()
+        if len(cont) > 0:
+            if len(cont) > 2 or not cont[-1].isdigit():
+                self._backspace(self.entry_6)
+                self.entry_6.focus()
 
 
     def get(self):
