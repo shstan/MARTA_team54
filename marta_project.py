@@ -1267,6 +1267,7 @@ class MARTA_Client:
         self.cursor.execute(
             "SELECT conCardNum, conUsername AS newOwner, dateTime, Breezecard.cUsername AS previousOwner "
             "FROM Conflict "
+            "INNER JOIN Breezecard ON ( conCardNum = cardNum ) "
             + self.current_suspended_card_sort)
         self.suspendedCardsTuple = self.cursor.fetchall()
         self.cardNums = []
