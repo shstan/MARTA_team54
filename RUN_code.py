@@ -202,7 +202,7 @@ class MARTA_Client:
         # breezeboxEntry.grid(row=7, column=2, padx=1)
         # r2 = Radiobutton(newUserRegistrationWindow, text="Option 2", variable=self.var, value=1, command=self.radioButtonChanging(1))
         # r2.grid(row=8, column=1, sticky=W)
-        self.breezeboxEntry = Entry(self.newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
+        self.breezeboxEntry = Entry(newUserRegistrationWindow, textvariable=self.registrationCardNum, width=20)
 
         print ("inside func" + str(self.var.get()))
         if self.var.get() == 1:
@@ -238,6 +238,7 @@ class MARTA_Client:
         # Click the Create Button on New User Registration Window:
         # Invoke createChooseFunctionalityWindow; Invoke buildChooseFunctionalityWindow;
         # Destroy New User Registration Window
+        print(self.registrationUsername.get())
         self.username = self.registrationUsername.get()
         self.emailAddress = self.registrationEmailAddress.get()
         self.password = self.registrationPassword.get()
@@ -257,9 +258,10 @@ class MARTA_Client:
         if not self.confirmPassword:
             messagebox.showwarning("Confirm password input is empty", "Please enter confirm password")
             return False
-        if self.isNewcard == 1:
-            if not newBreezeCardNum:
+        if self.isNewcard == 0:
+            if not len(newBreezeCardNum) == 16:
                 messagebox.showwarning("Confirm Breezecard input is empty", "Please enter breezecard number")
+            if not len
             return False
 
         isUsername = self.cursor.execute("SELECT * FROM User WHERE Username = %s", self.username)
@@ -291,9 +293,10 @@ class MARTA_Client:
 
 
         messagebox.showinfo("info","Register successfully!")
-        self.cursor.execute("INSERT INTO Passenger VALUES (%s, %s)", (self.username, self.emailAddress))
         self.cursor.execute("INSERT INTO User VALUES (%s, %s, 0)", (self.username, self.password))
 
+
+        self.cursor.execute("INSERT INTO Passenger VALUES (%s, %s)", (self.username, self.emailAddress))
         self.cursor.execute("INSERT INTO Breezecard VALUES (%s, 0, %s)", (self.newBreezeCardNum, self.username))
 
         self.createChooseFunctionalityWindow()
